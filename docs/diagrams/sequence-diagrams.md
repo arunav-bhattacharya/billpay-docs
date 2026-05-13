@@ -111,10 +111,10 @@ sequenceDiagram
   participant C as Client
   participant API as POST /payments
   participant R as Billpay Router
-  participant P as Parent WF<br/>#CreateImmediatePaymentWF or<br/>#CreateSchedulePaymentWF
-  participant GPA as #GetCorporatePaymentAllocationsWF (Batch)
-  participant ESP as #ExecuteSplitPaymentWF (Batch)
-  participant GPAext as GPA (External)
+  participant P as Parent WF (Immediate or Scheduled)
+  participant GPA as GetCorporatePaymentAllocationsWF
+  participant ESP as ExecuteSplitPaymentWF
+  participant GPAext as GPA External
   participant SVC as Payment Services
   participant EXT as External Systems
 
@@ -122,10 +122,10 @@ sequenceDiagram
   API->>R: route
   R->>P: invoke
   P->>SVC: NewPaymentIdempotencyService → PENDING
-  P->>SVC: validate → ACCEPTED / SCHEDULED
+  P->>SVC: validate → ACCEPTED or SCHEDULED
 
   Note over C,P: ✅ Respond to client at ACCEPTED or SCHEDULED — allocations and splits run asynchronously
-  P-->>API: success(payment-id, ACCEPTED or SCHEDULED)
+  P-->>API: success (payment-id, ACCEPTED or SCHEDULED)
   API-->>C: 201 Created
 
   Note over P,EXT: ⤵ async — happens after the client has been responded to
@@ -136,11 +136,11 @@ sequenceDiagram
   GPAext-->>SVC: allocations payload
   GPA->>SVC: AllocationsReceivedService + PaymentSplitsCreationService → ALLOCATIONS_RECEIVED
 
-  GPA->>ESP: trigger #ExecuteSplitPaymentWF (per split, via Corporate Allocations Processor Schedule)
+  GPA->>ESP: trigger #ExecuteSplitPaymentWF (via Corporate Allocations Processor Schedule)
   ESP->>SVC: PaymentExecutionService (split) → PROCESSING
   SVC->>EXT: Clearing / AR / OTB per split
   ESP->>SVC: PaymentFulfillmentService (split) → PROCESSED
-  SVC->>EXT: Accounting / B&C / Communications
+  SVC->>EXT: Accounting / B and C / Communications
 ```
 
 ## 4. Update a scheduled payment
