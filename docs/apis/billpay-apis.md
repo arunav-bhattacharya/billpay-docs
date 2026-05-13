@@ -1,0 +1,83 @@
+---
+id: billpay-apis
+title: Billpay Core APIs
+sidebar_position: 2
+---
+
+# Billpay Core APIs
+
+These are the REST endpoints owned by the Billpay service. Each request flows
+through the **Billpay Router**, which mints a `workflow-key` and invokes the
+appropriate Temporal workflow.
+
+## Core endpoints
+
+### `POST /payments`
+Create a payment. The router branches on three signals:
+
+| Signal | Workflow chosen |
+| --- | --- |
+| `payment-date = today`, single instruction | [`#CreateImmediatePaymentWF`](../workflows/core.md#1-createimmediatepaymentwf) (realtime) |
+| `payment-date = today`, multiple instructions | `#CreatePaymentWithMultipleInstructionsWF` (realtime) — see [Composite](../workflows/composite.md) |
+| `payment-date = future` | [`#CreateSchedulePaymentWF`](../workflows/core.md#2-createschedulepaymentwf) (realtime), then [`#ExecuteScheduledPaymentWF`](../workflows/core.md#3-executescheduledpaymentwf) when the schedule fires |
+
+For **corporate** accounts in any of the above, the workflow additionally
+triggers [`#GetCorporatePaymentAllocationsWF`](../workflows/core.md#9-getcorporatepaymentallocationswf)
+to fetch the split breakdown from GPA.
+
+### `PUT /payments/{payment-id}`
+Update a scheduled payment. Internally:
+
+1. Cancel the existing payment ([`#CancelPaymentWF`](../workflows/core.md#5-cancelpaymentwf))
+2. Create a fresh scheduled payment ([`#CreateSchedulePaymentWF`](../workflows/core.md#2-createschedulepaymentwf))
+3. Map old → new via `MapNewPaymentIdToPreviousIdService`
+
+See [`#UpdatePaymentWF`](../workflows/core.md#6-updatepaymentwf).
+
+### `DELETE /payments/{payment-id}`
+Cancels the payment if it is in `SCHEDULED` or `ACCEPTED`. Routes to
+[`#CancelPaymentWF`](../workflows/core.md#5-cancelpaymentwf).
+
+### `POST /payments/returns`
+Records a return — fired by the **Money Movement Event Handler** when a
+return event is received. Routes to
+[`#ProcessReturnedPaymentWF`](../workflows/core.md#7-processreturnedpaymentwf).
+
+### `POST /payments/inbound`
+Posts an inbound payment from upstream (Batch Gateway). Routes to
+[`#ProcessInboundPaymentWF`](../workflows/core.md#10-processinboundpaymentwf).
+
+### `POST /refunds`
+Creates a credit-balance refund. Routes to
+[`#CreateBalanceRefundWF`](../workflows/core.md#11-createbalancerefundwf).
+
+### `GET /payments/account/{account-id}`
+Read all payments for an account.
+
+### `GET /payments/{payment-id}`
+Read a single payment **and** its lifecycle events.
+
+## Composite
+
+### `POST /paymentInstallments`
+Composite endpoint. Combines:
+
+1. [`#CreateImmediatePaymentWF`](../workflows/core.md#1-createimmediatepaymentwf)
+2. A call to the **Installments API**
+3. An optional **Update Autopay** call
+
+See [Composite workflows](../workflows/composite.md) for the orchestration
+detail.
+
+## Idempotency
+
+Every Core API call passes through one of two idempotency services:
+
+- `NewPaymentIdempotencyService` for **create** flows — first-write to
+  `idempotency_checker` + `trans_dtl` + `trans_lfcyc_event` succeeds; duplicates
+  are rejected.
+- `ExistingPaymentIdempotencyService` for **mutate** flows — writes only to
+  `idempotency_checker` for the corresponding API.
+
+See [Payment Services](../services/payment-services.md#idempotency) for the
+full contract.

@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npx --yes create-docusaurus@latest . classic --skip-install)",
+      "Bash(npx --yes create-docusaurus@latest _tmp_site classic --skip-install)",
+      "Bash(npx --yes create-docusaurus@latest _tmp_site classic --skip-install --javascript)",
+      "Bash(shopt -s dotglob)",
+      "Bash(mv _tmp_site/* .)",
+      "Bash(mv _tmp_site/.* .)",
+      "Bash(npm install *)",
+      "Bash(rm static/img/undraw_docusaurus_*.svg static/img/docusaurus.png static/img/docusaurus-social-card.jpg && ls static/img)",
+      "Bash(npm run *)",
+      "Bash(grep -oE 'href=\"[^\"]{1,80}\"' build/docs/apis/sla-sli-slo/one-data-functions.html)",
+      "Bash(awk '/<div class=bp-toc>/{f=1; for\\(i=1;i<=3;i++\\) getline x; print prev; print $0} {prev=$0}' build/docs/intro.html)",
+      "Bash(curl -s http://localhost:3001/billpay-docs/docs/intro)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/billpay-docs/docs/intro)",
+      "Bash(wait)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3002/billpay-docs/docs/intro)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3002/billpay-docs/)",
+      "Bash(kill -9 32058)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/billpay-docs/docs/intro.html)",
+      "Bash(curl -s -o /dev/null -w \"root=%{http_code}\\\\n\" http://localhost:3003/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{url_effective}\\\\n\" http://localhost:3003/billpay-docs/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3003/billpay-docs/docs/intro)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -L http://localhost:3003/billpay-docs/docs/intro)",
+      "Bash(rm -rf /tmp/bp-serve)",
+      "Bash(mkdir -p /tmp/bp-serve)",
+      "Bash(ln -s /Users/arunav/Documents/workspace/claude-code/billpay-docs/build /tmp/bp-serve/billpay-docs)",
+      "Read(//tmp/bp-serve/**)"
+    ]
+  }
+}
