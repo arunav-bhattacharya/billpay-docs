@@ -28,7 +28,15 @@
       "Bash(rm -rf /tmp/bp-serve)",
       "Bash(mkdir -p /tmp/bp-serve)",
       "Bash(ln -s /Users/arunav/Documents/workspace/claude-code/billpay-docs/build /tmp/bp-serve/billpay-docs)",
-      "Read(//tmp/bp-serve/**)"
+      "Read(//tmp/bp-serve/**)",
+      "Bash(ln -sfn /Users/arunav/Documents/workspace/claude-code/billpay-docs/build /tmp/bp-serve/billpay-docs)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/billpay-docs/index.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/billpay-docs/docs/diagrams/sequence-diagrams.html)",
+      "Bash(curl -s http://localhost:3003/billpay-docs/docs/diagrams/sequence-diagrams.html)",
+      "Bash(curl -s -o /tmp/seq.html -w \"%{http_code} %{size_download}\\\\n\" http://localhost:3003/billpay-docs/docs/diagrams/sequence-diagrams.html)",
+      "Read(//tmp/**)",
+      "Bash(grep -oE 'mermaid|sequenceDiagram|diagram' /tmp/seq.html | sort | uniq -c | head -10)",
+      "Bash(grep -oE 'Respond to client at ACCEPTED[^\\\\\\\\\"]{0,80}' build/assets/js/b571b5db.70a085f7.js)"
     ]
   }
 }

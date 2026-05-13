@@ -41,6 +41,13 @@ sequenceDiagram
   WF->>SVC: PaymentValidationOnExecuteService
   SVC-->>WF: ACCEPTED
 
+  Note over C,WF: ✅ Respond to client at ACCEPTED — fulfillment continues asynchronously
+  WF-->>API: success(payment-id, ACCEPTED)
+  API-->>ODF: 201 Created
+  ODF-->>C: payment-id, status=ACCEPTED
+
+  Note over WF,COM: ⤵ async — happens after the client has been responded to
+
   par Clearing & Posting in parallel
     WF->>SVC: PaymentExecutionService
     SVC->>CL: send to clearing
@@ -56,10 +63,6 @@ sequenceDiagram
     SVC->>COM: notify communications
   end
   SVC-->>WF: PROCESSED
-
-  WF-->>API: success(payment-id, PROCESSED)
-  API-->>ODF: 201 Created
-  ODF-->>C: payment-id, status=PROCESSED
 ```
 
 ## 2. Scheduled payment — created today, executed later
@@ -120,14 +123,20 @@ sequenceDiagram
   R->>P: invoke
   P->>SVC: NewPaymentIdempotencyService → PENDING
   P->>SVC: validate → ACCEPTED / SCHEDULED
-  P->>GPA: trigger #GetCorporatePaymentAllocationsWF
 
+  Note over C,P: ✅ Respond to client at ACCEPTED or SCHEDULED — allocations and splits run asynchronously
+  P-->>API: success(payment-id, ACCEPTED or SCHEDULED)
+  API-->>C: 201 Created
+
+  Note over P,EXT: ⤵ async — happens after the client has been responded to
+
+  P->>GPA: trigger #GetCorporatePaymentAllocationsWF
   GPA->>SVC: AllocationsRequestService → ALLOCATIONS_REQUESTED
   SVC->>GPAext: request allocation breakdown
   GPAext-->>SVC: allocations payload
   GPA->>SVC: AllocationsReceivedService + PaymentSplitsCreationService → ALLOCATIONS_RECEIVED
 
-  GPA->>ESP: trigger #ExecuteSplitPaymentWF (per split)
+  GPA->>ESP: trigger #ExecuteSplitPaymentWF (per split, via Corporate Allocations Processor Schedule)
   ESP->>SVC: PaymentExecutionService (split) → PROCESSING
   SVC->>EXT: Clearing / AR / OTB per split
   ESP->>SVC: PaymentFulfillmentService (split) → PROCESSED
@@ -331,14 +340,16 @@ sequenceDiagram
   ODF->>API: POST /paymentInstallments
   API->>CWF: invoke composite
   CWF->>CIP: child workflow
-  CIP-->>CWF: payment-id (PROCESSED)
+  CIP-->>CWF: payment-id (ACCEPTED)
   CWF->>INST: create installment plan
   INST-->>CWF: installment-id
   opt autopay flag
     CWF->>AUTO: update autopay
     AUTO-->>CWF: OK
   end
+
+  Note over C,CWF: ✅ Respond to client at ACCEPTED — payment fulfillment continues asynchronously inside CIP
   CWF-->>API: success
   API-->>ODF: 201 Created
-  ODF-->>C: payment-id + installment-id
+  ODF-->>C: payment-id + installment-id (status=ACCEPTED)
 ```

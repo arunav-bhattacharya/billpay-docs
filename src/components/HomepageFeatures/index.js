@@ -62,7 +62,7 @@ export default function HomepageFeatures() {
     <section className="bp-features">
       <div className="bp-section-title">
         <h2>Everything you need, in one place</h2>
-        <p>Pick a starting point — product goes for the architecture and diagrams; engineers go straight to APIs, workflows and services.</p>
+        <p>Pick a starting point</p>
       </div>
       <div className="bp-grid">
         {FEATURES.map((f) => (

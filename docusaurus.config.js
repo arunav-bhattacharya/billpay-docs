@@ -4,7 +4,7 @@
 
 import {themes as prismThemes} from 'prism-react-renderer';
 
-const GH_USER = 'YOUR_GH_USER'; // <-- replace with your GitHub username / org
+const GH_USER = 'arunav-bhattacharya'; // <-- replace with your GitHub username / org
 const REPO_NAME = 'billpay-docs';
 
 /** @type {import('@docusaurus/types').Config} */
