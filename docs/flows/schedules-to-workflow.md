@@ -30,7 +30,7 @@ collide with the bars.
   'theme': 'base',
   'themeVariables': {
     'fontSize': '16px',
-    'fontFamily': 'Inter, sans-serif'
+    'fontFamily': 'JetBrains Mono, monospace'
   },
   'gantt': {
     'leftPadding': 260,

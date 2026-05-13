@@ -51,6 +51,60 @@ html { scroll-behavior: smooth; }
   padding: 16px 0;
 }
 
+/* Mermaid diagrams render text as SVG <text> elements — force JetBrains Mono
+   across every flavor (flowchart, sequence, state, gantt, timeline, ER). */
+.docusaurus-mermaid-container svg text,
+.docusaurus-mermaid-container svg foreignObject,
+.docusaurus-mermaid-container svg foreignObject div,
+.docusaurus-mermaid-container svg foreignObject span,
+.docusaurus-mermaid-container svg .nodeLabel,
+.docusaurus-mermaid-container svg .edgeLabel,
+.docusaurus-mermaid-container svg .actor,
+.docusaurus-mermaid-container svg .messageText,
+.docusaurus-mermaid-container svg .noteText,
+.docusaurus-mermaid-container svg .label,
+.docusaurus-mermaid-container svg .titleText {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+}
+
+/* Mermaid should render at natural size; the SVG already has useMaxWidth
+   so it scales to container. Make sure inner text doesn't get clipped by
+   foreignObject sizes that were measured before the font swapped in. */
+.docusaurus-mermaid-container svg foreignObject {
+  overflow: visible !important;
+}
+.docusaurus-mermaid-container svg foreignObject > div {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  display: inline-block !important;
+}
+
+/* State-diagram transition labels — shrink for cleaner look on arrows */
+.docusaurus-mermaid-container svg.statediagram .edgeLabel,
+.docusaurus-mermaid-container svg.statediagram .edgeLabel .nodeLabel,
+.docusaurus-mermaid-container svg.statediagram .edgeLabel .label,
+.docusaurus-mermaid-container svg.statediagram .edgeLabel foreignObject span,
+.docusaurus-mermaid-container svg.statediagram .edgeLabel foreignObject p,
+.docusaurus-mermaid-container svg[class*="statediagram"] .edgeLabel,
+.docusaurus-mermaid-container svg[class*="statediagram"] .edgeLabel span,
+.docusaurus-mermaid-container svg[class*="statediagram"] .edgeLabel p {
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
+}
+
+/* Flowchart edge labels — slightly reduce for aesthetic balance */
+.docusaurus-mermaid-container svg.flowchart .edgeLabel,
+.docusaurus-mermaid-container svg.flowchart .edgeLabel .label,
+.docusaurus-mermaid-container svg.flowchart .edgeLabel foreignObject span,
+.docusaurus-mermaid-container svg.flowchart .edgeLabel foreignObject p,
+.docusaurus-mermaid-container svg[class*="flowchart"] .edgeLabel,
+.docusaurus-mermaid-container svg[class*="flowchart"] .edgeLabel span,
+.docusaurus-mermaid-container svg[class*="flowchart"] .edgeLabel p {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
 /* Pretty tables */
 .markdown table {
   display: table;

@@ -16,32 +16,49 @@ For a single, combined view of the full state model, see
 
 ```mermaid
 stateDiagram-v2
-  [*] --> PENDING: NewPaymentIdempotencyService
-  PENDING --> ACCEPTED: PaymentValidationOnExecuteService<br/>+ PaymentStateTransitionService
-  PENDING --> DECLINED: validation failed
+  [*] --> PENDING: idempotency
+  PENDING --> ACCEPTED: validate
+  PENDING --> DECLINED: invalid
 
-  ACCEPTED --> PROCESSING: PaymentExecutionService (Full)<br/>or PaymentClearingService (Split, full-level clearing)
-  PROCESSING --> PROCESSED: PaymentFulfillmentService
+  ACCEPTED --> PROCESSING: execute (Full / Split)
+  PROCESSING --> PROCESSED: fulfill
 
-  ACCEPTED --> ACCEPTED_SPLITS: PaymentSplitsCreationService<br/>(Consumer split)
-  ACCEPTED_SPLITS --> [*]: trigger #ExecuteSplitPaymentWF
-  ACCEPTED --> ALLOCATIONS_REQUESTED: corporate split<br/>(triggers #GetCorporatePaymentAllocationsWF)
+  ACCEPTED --> ACCEPTED_SPLITS: create splits (Consumer)
+  ACCEPTED_SPLITS --> [*]: → #ExecuteSplitPaymentWF
+  ACCEPTED --> ALLOCATIONS_REQUESTED: if Corporate
 
-  DECLINED --> [*]: PaymentDeclinedNotificationService
+  DECLINED --> [*]: notify
   PROCESSED --> [*]
 ```
+
+:::note[Service mapping]
+- **idempotency** → `NewPaymentIdempotencyService`
+- **validate** → `PaymentValidationOnExecuteService` + `PaymentStateTransitionService`
+- **execute (Full / Split)** → `PaymentExecutionService` *(Full)* or `PaymentClearingService` *(Split, full-level clearing)*
+- **fulfill** → `PaymentFulfillmentService`
+- **create splits (Consumer)** → `PaymentSplitsCreationService`
+- **if Corporate** → triggers `#GetCorporatePaymentAllocationsWF`
+- **notify** (DECLINED) → `PaymentDeclinedNotificationService`
+:::
 
 ## 2. `#CreateSchedulePaymentWF`
 
 ```mermaid
 stateDiagram-v2
-  [*] --> PENDING: NewPaymentIdempotencyService
-  PENDING --> SCHEDULED: PaymentValidationOnSchedulingService<br/>+ PaymentStateTransitionService
-  PENDING --> DECLINED: validation failed
+  [*] --> PENDING: idempotency
+  PENDING --> SCHEDULED: validate
+  PENDING --> DECLINED: invalid
 
-  SCHEDULED --> [*]: PaymentScheduledNotificationService<br/>(corporate also triggers #GetCorporatePaymentAllocationsWF)
-  DECLINED --> [*]: PaymentDeclinedNotificationService
+  SCHEDULED --> [*]: notify
+  DECLINED --> [*]: notify
 ```
+
+:::note[Service mapping]
+- **idempotency** → `NewPaymentIdempotencyService`
+- **validate** → `PaymentValidationOnSchedulingService` + `PaymentStateTransitionService`
+- **notify** (SCHEDULED) → `PaymentScheduledNotificationService` *(Corporate additionally triggers `#GetCorporatePaymentAllocationsWF`)*
+- **notify** (DECLINED) → `PaymentDeclinedNotificationService`
+:::
 
 ## 3. `#ExecuteScheduledPaymentWF`
 
@@ -52,20 +69,28 @@ stateDiagram-v2
   Entry --> SCHEDULED
   Entry --> ALLOCATIONS_RECEIVED
 
-  SCHEDULED --> ACCEPTED: PaymentValidationOnExecutionService<br/>+ PaymentStateTransitionService
-  ALLOCATIONS_RECEIVED --> ACCEPTED: PaymentValidationOnExecutionService<br/>+ PaymentStateTransitionService
-  SCHEDULED --> DECLINED: validation failed
-  ALLOCATIONS_RECEIVED --> DECLINED: validation failed
+  SCHEDULED --> ACCEPTED: validate
+  ALLOCATIONS_RECEIVED --> ACCEPTED: validate
+  SCHEDULED --> DECLINED: invalid
+  ALLOCATIONS_RECEIVED --> DECLINED: invalid
 
-  ACCEPTED --> PROCESSING: PaymentExecutionService (Full)<br/>or PaymentClearingService (Split, full-level clearing)
-  PROCESSING --> PROCESSED: PaymentFulfillmentService
+  ACCEPTED --> PROCESSING: execute (Full / Split)
+  PROCESSING --> PROCESSED: fulfill
 
-  ACCEPTED --> ACCEPTED_SPLITS: PaymentSplitsCreationService<br/>(Consumer split)
-  ACCEPTED_SPLITS --> [*]: trigger #ExecuteSplitPaymentWF
+  ACCEPTED --> ACCEPTED_SPLITS: create splits (Consumer)
+  ACCEPTED_SPLITS --> [*]: → #ExecuteSplitPaymentWF
 
-  DECLINED --> [*]: PaymentDeclinedOnExecutionNotificationService
+  DECLINED --> [*]: notify
   PROCESSED --> [*]
 ```
+
+:::note[Service mapping]
+- **validate** → `PaymentValidationOnExecutionService` + `PaymentStateTransitionService`
+- **execute (Full / Split)** → `PaymentExecutionService` *(Full)* or `PaymentClearingService` *(Split, full-level clearing)*
+- **fulfill** → `PaymentFulfillmentService`
+- **create splits (Consumer)** → `PaymentSplitsCreationService`
+- **notify** (DECLINED) → `PaymentDeclinedOnExecutionNotificationService`
+:::
 
 ## 4. `#ExecuteSplitPaymentWF`
 
@@ -74,78 +99,106 @@ Operates at **split level** on `split_trans_dtl`.
 ```mermaid
 stateDiagram-v2
   [*] --> ACCEPTED
-  ACCEPTED --> PROCESSING: PaymentExecutionService (split, clearing-at-split)<br/>OR PaymentPostingService (split)<br/>+ PaymentSplitStateTransitionService
-  PROCESSING --> PROCESSED: PaymentFulfillmentService (split)<br/>+ PaymentSplitStateTransitionService
+  ACCEPTED --> PROCESSING: execute (clearing / posting)
+  PROCESSING --> PROCESSED: fulfill
   PROCESSED --> [*]
 ```
+
+:::note[Service mapping]
+- **execute (clearing / posting)** → `PaymentExecutionService` *(split, clearing-at-split)* **or** `PaymentPostingService` *(split)*, both paired with `PaymentSplitStateTransitionService`
+- **fulfill** → `PaymentFulfillmentService` *(split)* + `PaymentSplitStateTransitionService`
+:::
 
 ## 5. `#CancelPaymentWF`
 
 ```mermaid
 stateDiagram-v2
   state CurrentState <<choice>>
-  [*] --> CurrentState: ExistingPaymentIdempotencyService<br/>+ PaymentCancelValidationService
+  [*] --> CurrentState: idempotency + validate
   CurrentState --> SCHEDULED
   CurrentState --> ACCEPTED
-  SCHEDULED --> CANCELLED: PaymentCancellationService<br/>+ PaymentStateTransitionService
-  ACCEPTED --> CANCELLED: PaymentCancellationService<br/>+ PaymentStateTransitionService
+  SCHEDULED --> CANCELLED: cancel
+  ACCEPTED --> CANCELLED: cancel
   CANCELLED --> [*]
 ```
+
+:::note[Service mapping]
+- **idempotency + validate** → `ExistingPaymentIdempotencyService` + `PaymentCancelValidationService`
+- **cancel** → `PaymentCancellationService` + `PaymentStateTransitionService`
+:::
 
 ## 6. `#UpdatePaymentWF`
 
 ```mermaid
 stateDiagram-v2
-  [*] --> PENDING: ExistingPaymentIdempotencyService
+  [*] --> PENDING: idempotency
 
   state "Original payment" as Orig {
-    SCHEDULED --> CANCELLED: child #CancelPaymentWF
+    SCHEDULED --> CANCELLED: → #CancelPaymentWF
   }
 
   state "Replacement payment" as New {
     PENDING_new: PENDING
-    PENDING_new --> SCHEDULED_new: child #CreateSchedulePaymentWF
-    PENDING_new --> DECLINED_new: child #CreateSchedulePaymentWF
+    PENDING_new --> SCHEDULED_new: → #CreateSchedulePaymentWF
+    PENDING_new --> DECLINED_new: → #CreateSchedulePaymentWF
     SCHEDULED_new: SCHEDULED
     DECLINED_new: DECLINED
   }
 
   PENDING --> Orig
   PENDING --> New
-  Orig --> Mapping: MapNewPaymentIdToPreviousIdService
+  Orig --> Mapping: map old → new
   New --> Mapping
   Mapping --> [*]
 ```
+
+:::note[Service mapping]
+- **idempotency** → `ExistingPaymentIdempotencyService`
+- **→ #CancelPaymentWF / → #CreateSchedulePaymentWF** → child workflows
+- **map old → new** → `MapNewPaymentIdToPreviousIdService` *(records the relationship in `ORIG_TRANS_REFER_MAP`)*
+:::
 
 ## 7. `#ProcessReturnedPaymentWF`
 
 ```mermaid
 stateDiagram-v2
   state Current <<choice>>
-  [*] --> Current: ExistingPaymentIdempotencyService<br/>+ PaymentReturnValidationService
+  [*] --> Current: idempotency + validate
   Current --> PAID
   Current --> PROCESSING
   Current --> PROCESSED
 
-  PAID --> RETURNED: PaymentReturnExecutionService<br/>+ PaymentStateTransitionService
-  PROCESSING --> RETURNED: PaymentReturnExecutionService<br/>+ PaymentStateTransitionService
-  PROCESSED --> RETURNED: PaymentReturnExecutionService<br/>+ PaymentStateTransitionService
+  PAID --> RETURNED: return
+  PROCESSING --> RETURNED: return
+  PROCESSED --> RETURNED: return
 
-  RETURNED --> REPRESENTING: PaymentRepresentmentEligibilityService<br/>+ PaymentRepresentmentCreationService
+  RETURNED --> REPRESENTING: create representment
   RETURNED --> [*]
-  REPRESENTING --> [*]: hand off to #ProcessRepresentmentWF
+  REPRESENTING --> [*]: → #ProcessRepresentmentWF
 ```
+
+:::note[Service mapping]
+- **idempotency + validate** → `ExistingPaymentIdempotencyService` + `PaymentReturnValidationService`
+- **return** → `PaymentReturnExecutionService` + `PaymentStateTransitionService`
+- **create representment** → `PaymentRepresentmentEligibilityService` + `PaymentRepresentmentCreationService`
+:::
 
 ## 8. `#ProcessRepresentmentWF`
 
 ```mermaid
 stateDiagram-v2
-  [*] --> REPRESENTING: PaymentRepresentmentValidationService
-  REPRESENTING --> REPRESENTED: PaymentRepresentmentExecutionService<br/>+ PaymentStateTransitionService
-  REPRESENTING --> DECLINED: invalid representment<br/>+ PaymentStateTransitionService
+  [*] --> REPRESENTING: validate
+  REPRESENTING --> REPRESENTED: execute
+  REPRESENTING --> DECLINED: invalid
   REPRESENTED --> [*]
   DECLINED --> [*]
 ```
+
+:::note[Service mapping]
+- **validate** → `PaymentRepresentmentValidationService`
+- **execute** → `PaymentRepresentmentExecutionService` + `PaymentStateTransitionService`
+- **invalid** → state transition only via `PaymentStateTransitionService`
+:::
 
 ## 9. `#GetCorporatePaymentAllocationsWF`
 
@@ -156,32 +209,46 @@ stateDiagram-v2
   Source --> SCHEDULED
   Source --> ACCEPTED
 
-  SCHEDULED --> ALLOCATIONS_REQUESTED: AllocationsRequestService<br/>+ PaymentStateTransitionService
-  ACCEPTED  --> ALLOCATIONS_REQUESTED: AllocationsRequestService<br/>+ PaymentStateTransitionService
+  SCHEDULED --> ALLOCATIONS_REQUESTED: request
+  ACCEPTED  --> ALLOCATIONS_REQUESTED: request
 
-  ALLOCATIONS_REQUESTED --> ALLOCATIONS_RECEIVED: AllocationsReceivedService<br/>+ PaymentSplitsCreationService<br/>+ PaymentStateTransitionService
+  ALLOCATIONS_REQUESTED --> ALLOCATIONS_RECEIVED: receive + create splits
 
   ALLOCATIONS_RECEIVED --> [*]
 ```
+
+:::note[Service mapping]
+- **request** → `AllocationsRequestService` + `PaymentStateTransitionService`
+- **receive + create splits** → `AllocationsReceivedService` + `PaymentSplitsCreationService` + `PaymentStateTransitionService`
+:::
 
 ## 10. `#ProcessInboundPaymentWF`
 
 ```mermaid
 stateDiagram-v2
-  [*] --> PENDING: NewPaymentIdempotencyService
-  PENDING --> ACCEPTED: PaymentValidationOnPostingService<br/>+ PaymentStateTransitionService
-  PENDING --> DECLINED: validation failed
+  [*] --> PENDING: idempotency
+  PENDING --> ACCEPTED: validate
+  PENDING --> DECLINED: invalid
 
-  ACCEPTED --> PROCESSING: PaymentPostingService<br/>+ PaymentStateTransitionService
-  PROCESSING --> PROCESSED: PaymentFulfillmentService<br/>+ PaymentStateTransitionService
+  ACCEPTED --> PROCESSING: post
+  PROCESSING --> PROCESSED: fulfill
 
-  ACCEPTED --> ACCEPTED_SPLITS: PaymentSplitsCreationService<br/>(Consumer split → #ExecuteSplitPaymentWF)
-  ACCEPTED_SPLITS --> [*]
+  ACCEPTED --> ACCEPTED_SPLITS: create splits (Consumer)
+  ACCEPTED_SPLITS --> [*]: → #ExecuteSplitPaymentWF
 
-  DECLINED --> REJECTED: PaymentRejectionService<br/>+ PaymentStateTransitionService
+  DECLINED --> REJECTED: reject
   REJECTED --> [*]
   PROCESSED --> [*]
 ```
+
+:::note[Service mapping]
+- **idempotency** → `NewPaymentIdempotencyService`
+- **validate** → `PaymentValidationOnPostingService` + `PaymentStateTransitionService`
+- **post** → `PaymentPostingService` + `PaymentStateTransitionService`
+- **fulfill** → `PaymentFulfillmentService` + `PaymentStateTransitionService`
+- **create splits (Consumer)** → `PaymentSplitsCreationService`
+- **reject** → `PaymentRejectionService` + `PaymentStateTransitionService`
+:::
 
 ## 11. `#CreateBalanceRefundWF`
 

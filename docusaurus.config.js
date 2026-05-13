@@ -41,6 +41,18 @@ const config = {
     locales: ['en'],
   },
 
+  headTags: [
+    {tagName: 'link', attributes: {rel: 'preconnect', href: 'https://fonts.googleapis.com'}},
+    {tagName: 'link', attributes: {rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous'}},
+  ],
+
+  stylesheets: [
+    {
+      href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=block',
+      rel: 'stylesheet',
+    },
+  ],
+
   presets: [
     [
       'classic',
@@ -76,6 +88,39 @@ const config = {
       },
       mermaid: {
         theme: {light: 'neutral', dark: 'dark'},
+        options: {
+          fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+          flowchart: {
+            htmlLabels: true,
+            useMaxWidth: true,
+            nodeSpacing: 60,
+            rankSpacing: 70,
+            padding: 16,
+            curve: 'basis',
+          },
+          sequence: {
+            actorFontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+            noteFontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+            messageFontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+            actorFontSize: 14,
+            messageFontSize: 13,
+            noteFontSize: 12,
+            wrap: true,
+            boxMargin: 12,
+            boxTextMargin: 6,
+            noteMargin: 12,
+            messageMargin: 40,
+          },
+          state: {
+            useMaxWidth: true,
+            padding: 16,
+            nodeSpacing: 70,
+            rankSpacing: 80,
+          },
+          themeVariables: {
+            fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+          },
+        },
       },
       navbar: {
         title: 'Billpay Platform',
