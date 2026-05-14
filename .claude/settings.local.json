@@ -47,7 +47,31 @@
       "Bash(curl -s -L https://arunav-bhattacharya.github.io/billpay-docs/)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -L https://arunav-bhattacharya.github.io/billpay-docs/docs/intro)",
       "Bash(curl -sL https://arunav-bhattacharya.github.io/billpay-docs/)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/billpay-docs/docs/diagrams/state-diagrams.html)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/billpay-docs/docs/diagrams/state-diagrams.html)",
+      "Bash(grep -oE '[^{},]*\\\\.col--3[^{]{0,200}\\\\{[^}]+\\\\}' build/assets/css/styles.66a048e2.css)",
+      "Bash(grep -n -oE '[^{}\\\\n]{0,80}\\\\.col\\\\b[^{]*\\\\{[^}]+\\\\}' build/assets/css/styles.66a048e2.css)",
+      "Bash(awk -v RS='}' '/\\\\.col[^a-zA-Z0-9_-]/{ print NR\": \"$0\"}\" }' build/assets/css/styles.66a048e2.css)",
+      "Bash(awk -v RS='}' '/col--3/{ print NR\": \"$0\"}\" }' build/assets/css/styles.66a048e2.css)",
+      "Bash(awk -v RS='}' '/docItemCol_VOVn/{ print NR\": \"$0\"}\" }' build/assets/css/styles.66a048e2.css)",
+      "Bash(grep -oE '[^,{]*docItemCol_VOVn[^,{]*\\\\{[^}]+\\\\}' build/assets/css/styles.66a048e2.css)",
+      "Bash(awk '/docItemCol_VOVn\\\\{max-width:75%/{ pos=$0; print FNR\": \"$0 }' build/assets/css/styles.66a048e2.css)",
+      "Bash(grep -oE '@layer [^{}]*\\\\{[^{}]{0,200}bp-toc-collapsed-state[^{}]{0,300}\\\\}' build/assets/css/styles.aaa8de80.css)",
+      "Bash(grep -oE 'bp-toc-collapsed-state[^,{}]*\\\\{[^}]+\\\\}' build/assets/css/styles.aaa8de80.css)",
+      "Bash(grep -oE 'bp-toc-collapsed-state[^{},]*\\\\{[^}]+\\\\}' build/assets/css/styles.aaa8de80.css)",
+      "Bash(awk 'BEGIN{depth=0; layer=\"\"; n=1} {for\\(i=1;i<=length\\($0\\);i++\\){c=substr\\($0,i,1\\); if\\(c==\"{\"\\){depth++} else if\\(c==\"}\"\\){depth--}}}' build/assets/css/styles.aaa8de80.css)",
+      "Bash(awk -v RS='}' '/bp-toc-collapsed-state/{ printf \"RECORD %d: %s}\\\\n\", NR, $0 }' build/assets/css/styles.aaa8de80.css)",
+      "Bash(awk -v RS='}' 'NR>=425 && NR<=435 { printf \"%d: %s}\\\\n\", NR, $0 }' build/assets/css/styles.aaa8de80.css)",
+      "Bash(awk -v RS='}' 'BEGIN{layer=\"\"; media=\"\"} /^@layer docusaurus.theme-classic\\\\{/ { layer=\"theme-classic\" } /docItemCol_VOVn.*75%/ { print \"FOUND: layer=\"layer\" media=\"media\" rule=\"$0\"}\" }' build/assets/css/styles.aaa8de80.css)",
+      "Bash(awk -v RS='}' 'BEGIN{layer=\"\"} /^@layer docusaurus\\\\.\\([a-z-]+\\)\\\\{/ { match\\($0, /docusaurus\\\\.\\([a-z-]+\\)/, m\\); layer = m[1] } /bp-toc-collapsed-state.*col--3/ { print \"Rule in layer=\"layer \": \"$0\"}\" }' build/assets/css/styles.d50c5757.css)",
+      "Bash(grep -oE '@layer [^{]*\\\\{[^@]{0,100}' build/assets/css/styles.d50c5757.css)",
+      "Bash(awk -v RS='}' 'BEGIN{layer=\"UNLAYERED\"; depth=0} /^@layer docusaurus\\\\./{ match\\($0,/docusaurus\\\\.[a-z-]+/\\); layer = substr\\($0,RSTART,RLENGTH\\); depth=1 } /bp-toc-collapsed/{ print \"RULE in layer=\"layer\": \"$0\"}\" }' build/assets/css/styles.d50c5757.css)",
+      "Bash(awk -v RS='}' 'NR>=430 && NR<=445 { print NR\": \"$0\"}\" }' build/assets/css/styles.d50c5757.css)",
+      "Bash(awk -v RS='}' '/bp-toc-collapsed-state/{ print NR\": \"$0\"}\" }' build/assets/css/styles.d50c5757.css)",
+      "Bash(awk -v RS='}' 'NR>=445 && NR<=455 { print NR\": \"$0\"}\" }' build/assets/css/styles.d50c5757.css)",
+      "Bash(awk -v RS='}' '/docItemCol_VOVn/{ print NR\": \"$0\"}\" }' build/assets/css/styles.d50c5757.css)",
+      "Bash(curl -s http://localhost:3003/billpay-docs/assets/css/styles.d50c5757.css)",
+      "Bash(grep -oE 'bp-toc-collapsed-state[^{}]{0,100}\\\\{[^}]+\\\\}')",
+      "Bash(grep -oE '[^,{}]*docItemCol_[^,{}]*\\\\{[^}]+\\\\}' build/assets/css/styles.d50c5757.css)"
     ]
   }
 }

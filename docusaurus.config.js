@@ -36,6 +36,8 @@ const config = {
   },
   themes: ['@docusaurus/theme-mermaid'],
 
+  clientModules: [require.resolve('./src/clientModules/colorize-mermaid-notes.js')],
+
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],

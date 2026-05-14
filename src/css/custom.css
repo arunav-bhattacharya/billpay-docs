@@ -67,6 +67,173 @@ html { scroll-behavior: smooth; }
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
 }
 
+/* Sequence-diagram readability in both themes.
+   Mermaid's `actor` class is shared by both <text> and <rect> elements;
+   we override text fill but leave the rect to render with the theme box
+   color so the badge stays visible behind the label. */
+[data-theme='light'] .docusaurus-mermaid-container svg text.actor,
+[data-theme='light'] .docusaurus-mermaid-container svg text.actor-box,
+[data-theme='light'] .docusaurus-mermaid-container svg .messageText,
+[data-theme='light'] .docusaurus-mermaid-container svg text.labelText {
+  fill: #1f2937 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg text.actor,
+[data-theme='dark'] .docusaurus-mermaid-container svg text.actor-box,
+[data-theme='dark'] .docusaurus-mermaid-container svg .messageText,
+[data-theme='dark'] .docusaurus-mermaid-container svg text.labelText {
+  fill: #f1f5f9 !important;
+}
+
+/* Actor badge boxes (the small box at top of each lifeline) — theme-aware
+   solid background so the actor text reads cleanly on top. */
+[data-theme='light'] .docusaurus-mermaid-container svg rect.actor,
+[data-theme='light'] .docusaurus-mermaid-container svg rect.actor-box,
+[data-theme='light'] .docusaurus-mermaid-container svg rect.actor-man {
+  fill: #f1f5f9 !important;
+  stroke: #94a3b8 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg rect.actor,
+[data-theme='dark'] .docusaurus-mermaid-container svg rect.actor-box,
+[data-theme='dark'] .docusaurus-mermaid-container svg rect.actor-man {
+  fill: #1e293b !important;
+  stroke: #475569 !important;
+}
+
+/* Vertical lifelines */
+[data-theme='light'] .docusaurus-mermaid-container svg line.actor-line {
+  stroke: #94a3b8 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg line.actor-line {
+  stroke: #64748b !important;
+}
+
+/* Sequence arrows readable in both themes */
+[data-theme='light'] .docusaurus-mermaid-container svg line.messageLine0,
+[data-theme='light'] .docusaurus-mermaid-container svg line.messageLine1,
+[data-theme='light'] .docusaurus-mermaid-container svg path.messageLine0,
+[data-theme='light'] .docusaurus-mermaid-container svg path.messageLine1 {
+  stroke: #1f2937 !important;
+  fill: none !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg line.messageLine0,
+[data-theme='dark'] .docusaurus-mermaid-container svg line.messageLine1,
+[data-theme='dark'] .docusaurus-mermaid-container svg path.messageLine0,
+[data-theme='dark'] .docusaurus-mermaid-container svg path.messageLine1 {
+  stroke: #e2e8f0 !important;
+  fill: none !important;
+}
+/* Arrowheads */
+[data-theme='light'] .docusaurus-mermaid-container svg #arrowhead path,
+[data-theme='light'] .docusaurus-mermaid-container svg [id*="arrowhead"] path {
+  fill: #1f2937 !important;
+  stroke: #1f2937 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg #arrowhead path,
+[data-theme='dark'] .docusaurus-mermaid-container svg [id*="arrowhead"] path {
+  fill: #e2e8f0 !important;
+  stroke: #e2e8f0 !important;
+}
+
+/* Note backgrounds — theme-aware. Default notes (client response, async
+   markers, etc.) get an amber-tinted background that's clearly visible on
+   both light and dark page backgrounds. */
+.docusaurus-mermaid-container svg rect.note {
+  stroke-width: 1px !important;
+}
+[data-theme='light'] .docusaurus-mermaid-container svg rect.note {
+  fill: #fef3c7 !important;
+  stroke: #d97706 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg rect.note {
+  fill: #422006 !important;
+  stroke: #f59e0b !important;
+}
+[data-theme='light'] .docusaurus-mermaid-container svg .noteText,
+[data-theme='light'] .docusaurus-mermaid-container svg text.noteText,
+[data-theme='light'] .docusaurus-mermaid-container svg text.noteText tspan {
+  fill: #78350f !important;
+  font-weight: 500 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg .noteText,
+[data-theme='dark'] .docusaurus-mermaid-container svg text.noteText,
+[data-theme='dark'] .docusaurus-mermaid-container svg text.noteText tspan {
+  fill: #fde68a !important;
+  font-weight: 500 !important;
+}
+
+/* Worker notes (Realtime Worker · / Batch Worker · ...) — distinct color
+   so workflow scope identifiers stand apart from informational notes.
+   The classifying client module adds `.bp-worker-note` to matching rects. */
+[data-theme='light'] .docusaurus-mermaid-container svg rect.note.bp-worker-note {
+  fill: #dbeafe !important;
+  stroke: #2563eb !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg rect.note.bp-worker-note {
+  fill: #1e3a8a !important;
+  stroke: #60a5fa !important;
+}
+[data-theme='light'] .docusaurus-mermaid-container svg text.noteText.bp-worker-note,
+[data-theme='light'] .docusaurus-mermaid-container svg text.noteText.bp-worker-note tspan,
+[data-theme='light'] .docusaurus-mermaid-container svg tspan.bp-worker-note {
+  fill: #1e3a8a !important;
+  font-weight: 600 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg text.noteText.bp-worker-note,
+[data-theme='dark'] .docusaurus-mermaid-container svg text.noteText.bp-worker-note tspan,
+[data-theme='dark'] .docusaurus-mermaid-container svg tspan.bp-worker-note {
+  fill: #dbeafe !important;
+  font-weight: 600 !important;
+}
+
+/* Loop / alt / opt / par labels */
+[data-theme='light'] .docusaurus-mermaid-container svg text.loopText,
+[data-theme='light'] .docusaurus-mermaid-container svg text.loopText tspan,
+[data-theme='light'] .docusaurus-mermaid-container svg text.labelText,
+[data-theme='light'] .docusaurus-mermaid-container svg text.labelText tspan {
+  fill: #1f2937 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg text.loopText,
+[data-theme='dark'] .docusaurus-mermaid-container svg text.loopText tspan,
+[data-theme='dark'] .docusaurus-mermaid-container svg text.labelText,
+[data-theme='dark'] .docusaurus-mermaid-container svg text.labelText tspan {
+  fill: #f1f5f9 !important;
+}
+
+/* Group box LABELS — Mermaid renders these as plain <text class="text">.
+   They default to black fill which is invisible in dark mode. */
+[data-theme='light'] .docusaurus-mermaid-container svg text.text {
+  fill: #1f2937 !important;
+  font-weight: 700 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg text.text {
+  fill: #f1f5f9 !important;
+  font-weight: 700 !important;
+}
+
+/* labelBox (the small rect around alt/opt/par keyword) — theme-aware */
+[data-theme='light'] .docusaurus-mermaid-container svg rect.labelBox {
+  fill: #e5e7eb !important;
+  stroke: #94a3b8 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg rect.labelBox {
+  fill: #1e293b !important;
+  stroke: #475569 !important;
+}
+
+/* Loop line strokes */
+[data-theme='light'] .docusaurus-mermaid-container svg line.loopLine {
+  stroke: #64748b !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg line.loopLine {
+  stroke: #94a3b8 !important;
+}
+
+/* Catch-all for any SVG text inside mermaid that doesn't have a specific
+   color rule above — applies the base text color of the theme. */
+[data-theme='light'] .docusaurus-mermaid-container svg text:not([class*="messageLine"]):not([class*="arrowhead"]) {
+  /* not !important — only acts as a fallback when no more-specific rule wins */
+}
+
 /* Mermaid should render at natural size; the SVG already has useMaxWidth
    so it scales to container. Make sure inner text doesn't get clipped by
    foreignObject sizes that were measured before the font swapped in. */
@@ -320,6 +487,29 @@ html { scroll-behavior: smooth; }
 /* When collapsed, keep the button neatly anchored at the top */
 .bp-toc--collapsed { min-height: auto; }
 .bp-toc--collapsed .bp-toc__toggle { margin-bottom: 0; }
+
+/* DocItem column widths during TOC show/hide.
+   Docusaurus puts .docItemCol's max-width: 75% in `@layer docusaurus.theme-classic`,
+   so we wrap our overrides in the same layer (the @layer keyword merges by name).
+   Selectors use [class*=...] to be hash-agnostic since CSS Modules add a hash. */
+@layer docusaurus.theme-classic {
+  @media (min-width: 997px) {
+    .row > [class*="docItemColWide"] {
+      flex: 1 1 auto !important;
+      max-width: calc(100% - 64px) !important;
+    }
+    .row > [class*="docTocColCollapsed"] {
+      flex: 0 0 56px !important;
+      max-width: 56px !important;
+      min-width: 56px !important;
+    }
+  }
+  /* Smooth transitions in both directions */
+  .row > [class*="docItemCol"],
+  .row > [class*="docTocCol"] {
+    transition: max-width .2s ease, flex-basis .2s ease;
+  }
+}
 
 @keyframes bp-toc-fade {
   from { opacity: 0; transform: translateY(-2px); }
