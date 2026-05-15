@@ -93,7 +93,7 @@ Consulted on the way in, before a workflow accepts or schedules the payment.
 | **Account Verification Service (AVS)** | Verifies the funding account is real, owned, and in good standing |
 | **GPA (Allocations)** | For **corporate** payments — returns the split breakdown across underlying accounts |
 
-### Money movement, balance & posting
+### Payment Execution
 
 The legacy integrations the platform is actively modernising (see the [Product Vision speed-problem section](../vision/product.md#the-speed-problem-were-solving)).
 
@@ -102,13 +102,13 @@ The legacy integrations the platform is actively modernising (see the [Product V
 | **Clearing** | Transmits the payment for inter-bank settlement |
 | **Authorization / OTB** | Increases open-to-buy when a payment is accepted |
 | **Accounts Receivable (GAR)** | Decrements the cardholder's balance |
-| **Accounting** | Receives ledger entries on fulfillment |
-| **Balance & Control** | Reconciles balances post-fulfillment |
 
 ### Fulfillment & notification
 
 | System | Purpose |
 | --- | --- |
+| **Accounting** | Receives ledger entries on fulfillment |
+| **Balance & Control** | Reconciles balances post-fulfillment |
 | **Communications** | Sends notifications (push, email, SMS) to the cardholder |
 
 ## Storage surface
