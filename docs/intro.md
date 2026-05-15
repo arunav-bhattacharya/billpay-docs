@@ -35,9 +35,6 @@ This site captures every moving part of that journey:
   for an end-to-end view, then drill into individual
   [Workflows](design/workflows/core.md) and the
   [Payment Services](design/services.md) reference.
-- **For operators.** [Scheduled Workflows](design/workflows/scheduled.md) and the
-  [Event Handlers](design/workflows/event-handlers.md) page describe the cron and event-driven
-  surfaces you'll be monitoring.
 
 ## Conventions
 
