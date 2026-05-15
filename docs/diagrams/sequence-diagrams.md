@@ -45,6 +45,7 @@ sequenceDiagram
     participant WF as Create Immediate Payment WF
     participant IDEMP as Idempotency Check
     participant PVAL as Validation
+    participant PDN as Decline Notify
     participant PEX as Execution
     participant PFL as Fulfillment
   end
@@ -55,24 +56,31 @@ sequenceDiagram
   R->>WF: invoke(workflow-key)
 
   rect rgba(0,111,207,0.15)
-    Note over WF,PVAL: Realtime Worker CreateImmediatePaymentWF — validates and accepts inline
+    Note over WF,PDN: Realtime Worker CreateImmediatePaymentWF — validates inline, then accepts or declines
     WF->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>WF: state → PENDING
     end
     WF->>PVAL: validate
-    rect rgba(217,70,239,0.22)
-      PVAL-->>WF: state → ACCEPTED
+    alt validation passes
+      rect rgba(217,70,239,0.22)
+        PVAL-->>WF: state → ACCEPTED
+      end
+    else validation fails
+      rect rgba(217,70,239,0.22)
+        PVAL-->>WF: state → DECLINED
+      end
+      WF->>PDN: notify decline
     end
   end
 
-  Note over C,WF: Client receives 201 ACCEPTED — payment is durable, fulfillment continues in the background
-  WF-->>API: success (payment-id, ACCEPTED)
+  Note over C,WF: Client receives 201 with status=ACCEPTED or DECLINED — only ACCEPTED proceeds to background fulfillment
+  WF-->>API: success (payment-id, ACCEPTED or DECLINED)
   API-->>ODF: 201 Created
-  ODF-->>C: payment-id, status=ACCEPTED
+  ODF-->>C: payment-id, status
 
   rect rgba(245,158,11,0.18)
-    Note over WF,PFL: Realtime Worker CreateImmediatePaymentWF — async execution and fulfillment continue after the client response
+    Note over WF,PFL: Realtime Worker CreateImmediatePaymentWF — async execution and fulfillment run only on ACCEPTED
     WF->>PEX: execute
     rect rgba(217,70,239,0.22)
       PEX-->>WF: state → PROCESSING
@@ -104,9 +112,11 @@ sequenceDiagram
     participant IDEMP as Idempotency Check
     participant PVS as Validation (Schedule)
     participant PSN as Scheduled Notify
+    participant PDN as Decline Notify
     participant SCH as Scheduled Payment Executor
     participant ESP as Execute Scheduled Payment WF
     participant PVX as Validation (Execution)
+    participant PDNE as Decline Notify (Execution)
     participant PEX as Execution
     participant PFL as Fulfillment
   end
@@ -116,43 +126,57 @@ sequenceDiagram
   R->>CSP: invoke(workflow-key)
 
   rect rgba(0,111,207,0.15)
-    Note over CSP,PSN: Realtime Worker CreateSchedulePaymentWF — validates the schedule, returns SCHEDULED
+    Note over CSP,PDN: Realtime Worker CreateSchedulePaymentWF — validates the schedule, then schedules or declines
     CSP->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>CSP: state → PENDING
     end
     CSP->>PVS: validate schedule
-    rect rgba(217,70,239,0.22)
-      PVS-->>CSP: state → SCHEDULED
+    alt validation passes
+      rect rgba(217,70,239,0.22)
+        PVS-->>CSP: state → SCHEDULED
+      end
+      CSP->>PSN: notify scheduled
+    else validation fails
+      rect rgba(217,70,239,0.22)
+        PVS-->>CSP: state → DECLINED
+      end
+      CSP->>PDN: notify decline
     end
-    CSP->>PSN: notify scheduled
   end
 
-  CSP-->>API: SCHEDULED
-  API-->>C: 201 Created (SCHEDULED)
+  CSP-->>API: SCHEDULED or DECLINED
+  API-->>C: 201 Created (status)
 
-  Note over SCH,ESP: On payment date · Scheduled Payment Executor fires (waves of 2,500 / minute)
+  Note over SCH,ESP: On payment date · Scheduled Payment Executor fires (waves of 2,500 / minute) — only SCHEDULED payments
 
   rect rgba(245,158,11,0.18)
-    Note over SCH,PFL: Batch Worker ExecuteScheduledPaymentWF — re-validates, executes and fulfills
+    Note over SCH,PFL: Batch Worker ExecuteScheduledPaymentWF — re-validates, then executes and fulfills or declines
     SCH->>ESP: pick up SCHEDULED payments (batches of 2,500/min)
     ESP->>PVX: validate
-    rect rgba(217,70,239,0.22)
-      PVX-->>ESP: state → ACCEPTED
-    end
-    ESP->>PEX: execute
-    rect rgba(217,70,239,0.22)
-      PEX-->>ESP: state → PROCESSING
-    end
-    ESP->>PFL: fulfill
-    rect rgba(217,70,239,0.22)
-      PFL-->>ESP: state → PROCESSED
+    alt validation passes
+      rect rgba(217,70,239,0.22)
+        PVX-->>ESP: state → ACCEPTED
+      end
+      ESP->>PEX: execute
+      rect rgba(217,70,239,0.22)
+        PEX-->>ESP: state → PROCESSING
+      end
+      ESP->>PFL: fulfill
+      rect rgba(217,70,239,0.22)
+        PFL-->>ESP: state → PROCESSED
+      end
+    else validation fails
+      rect rgba(217,70,239,0.22)
+        PVX-->>ESP: state → DECLINED
+      end
+      ESP->>PDNE: notify decline on execution
     end
   end
 ```
 
 :::note[After PROCESSED]
-`PAID` is reached separately by the **Paid Events Processor reconciliation** — see [diagram #9](#9-paid-events-reconciliation).
+`PAID` is reached separately by the **Paid Events Processor reconciliation** — see [diagram #10](#10-paid-events-reconciliation).
 :::
 
 ## 3. Immediate Corporate Payment
@@ -176,6 +200,7 @@ sequenceDiagram
     participant CIP as Create Immediate Payment WF
     participant IDEMP as Idempotency Check
     participant PVAL as Validation
+    participant PDN as Decline Notify
     participant GPA as Get Corporate Payment Allocations WF
     participant ARQ as Allocations Request
     participant ARC as Allocations Received
@@ -190,19 +215,26 @@ sequenceDiagram
   R->>CIP: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over CIP,PVAL: Realtime Worker CreateImmediatePaymentWF — validates and accepts inline
+    Note over CIP,PDN: Realtime Worker CreateImmediatePaymentWF — validates inline, then accepts or declines
     CIP->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>CIP: state → PENDING
     end
     CIP->>PVAL: validate
-    rect rgba(217,70,239,0.22)
-      PVAL-->>CIP: state → ACCEPTED
+    alt validation passes
+      rect rgba(217,70,239,0.22)
+        PVAL-->>CIP: state → ACCEPTED
+      end
+    else validation fails
+      rect rgba(217,70,239,0.22)
+        PVAL-->>CIP: state → DECLINED
+      end
+      CIP->>PDN: notify decline
     end
   end
 
-  Note over C,CIP: Client receives 201 ACCEPTED — allocations and split execution run in the background
-  CIP-->>API: success (payment-id, ACCEPTED)
+  Note over C,CIP: Client receives 201 with status=ACCEPTED or DECLINED — only ACCEPTED proceeds to corporate allocations and splits
+  CIP-->>API: success (payment-id, ACCEPTED or DECLINED)
   API-->>C: 201 Created
 
   rect rgba(245,158,11,0.18)
@@ -259,6 +291,7 @@ sequenceDiagram
     participant CSP as Create Schedule Payment WF
     participant IDEMP as Idempotency Check
     participant PVS as Validation (Schedule)
+    participant PDN as Decline Notify
     participant GPA as Get Corporate Payment Allocations WF
     participant ARQ as Allocations Request
     participant ARC as Allocations Received
@@ -266,6 +299,7 @@ sequenceDiagram
     participant SCH as Scheduled Payment Executor
     participant ESPS as Execute Scheduled Payment WF
     participant PVX as Validation (Execution)
+    participant PDNE as Decline Notify (Execution)
     participant ESP as Execute Split Payment WF
     participant PEX as Execution
     participant PFL as Fulfillment
@@ -276,19 +310,26 @@ sequenceDiagram
   R->>CSP: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over CSP,PVS: Realtime Worker CreateSchedulePaymentWF — validates the schedule, returns SCHEDULED
+    Note over CSP,PDN: Realtime Worker CreateSchedulePaymentWF — validates the schedule, then schedules or declines
     CSP->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>CSP: state → PENDING
     end
     CSP->>PVS: validate schedule
-    rect rgba(217,70,239,0.22)
-      PVS-->>CSP: state → SCHEDULED
+    alt validation passes
+      rect rgba(217,70,239,0.22)
+        PVS-->>CSP: state → SCHEDULED
+      end
+    else validation fails
+      rect rgba(217,70,239,0.22)
+        PVS-->>CSP: state → DECLINED
+      end
+      CSP->>PDN: notify decline
     end
   end
 
-  CSP-->>API: SCHEDULED
-  API-->>C: 201 Created (SCHEDULED)
+  CSP-->>API: SCHEDULED or DECLINED
+  API-->>C: 201 Created (status)
 
   rect rgba(245,158,11,0.18)
     Note over CSP,PSC: Async (today) — corporate allocations fetched up front so they're ready on payment date
@@ -314,16 +355,23 @@ sequenceDiagram
     Note over SCH,PFL: Batch chain — re-validate, then execute and fulfill each split
 
     rect rgba(0,111,207,0.15)
-      Note over SCH,PVX: Batch Worker ExecuteScheduledPaymentWF — re-validates and accepts inline
+      Note over SCH,PDNE: Batch Worker ExecuteScheduledPaymentWF — re-validates, then accepts or declines
       SCH->>ESPS: pick up ALLOCATIONS_RECEIVED payments
       ESPS->>PVX: validate
-      rect rgba(217,70,239,0.22)
-        PVX-->>ESPS: state → ACCEPTED
+      alt validation passes
+        rect rgba(217,70,239,0.22)
+          PVX-->>ESPS: state → ACCEPTED
+        end
+      else validation fails
+        rect rgba(217,70,239,0.22)
+          PVX-->>ESPS: state → DECLINED
+        end
+        ESPS->>PDNE: notify decline on execution
       end
     end
 
     rect rgba(0,111,207,0.15)
-      Note over ESP,PFL: Batch Worker ExecuteSplitPaymentWF — drained by the Corporate Allocations Processor Schedule
+      Note over ESP,PFL: Batch Worker ExecuteSplitPaymentWF — only runs on ACCEPTED, drained by the Corporate Allocations Processor Schedule
       ESPS->>ESP: trigger split execution
       ESP->>PEX: execute split
       rect rgba(217,70,239,0.22)
@@ -431,7 +479,12 @@ sequenceDiagram
   API-->>C: response
 ```
 
-## 7. Return processing (with representment branch)
+## 7. Return Processing + Representment Eligibility Check
+
+`#ProcessReturnedPaymentWF` — triggered by Money Movement return events.
+Validates the return, transitions the payment to `RETURNED`, then checks
+representment eligibility. If representable, it transitions to `REPRESENTING`
+and hands off to `#ProcessRepresentmentWF` (see [diagram #8](#8-representment-workflow)).
 
 ```mermaid
 sequenceDiagram
@@ -447,8 +500,6 @@ sequenceDiagram
     participant PRE as Representment Elig.
     participant PRC as Representment Create
     participant PRP as Process Representment WF
-    participant PRRV as Representment Validate
-    participant PRRX as Representment Execute
   end
 
   Note over MMH: receives Money Movement (MR/M3) return event
@@ -456,7 +507,7 @@ sequenceDiagram
   API->>PR: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over PR,PRC: Batch Worker ProcessReturnedPaymentWF — triggered by Money Movement return events
+    Note over PR,PRC: Batch Worker ProcessReturnedPaymentWF — handles the return then checks representment eligibility
     PR->>IDEMP: check idempotency
     PR->>PRV: validate return
     alt valid return
@@ -470,28 +521,53 @@ sequenceDiagram
         rect rgba(217,70,239,0.22)
           PRC-->>PR: state → REPRESENTING
         end
-        PR->>PRP: hand off
+        PR->>PRP: hand off to ProcessRepresentmentWF
+      else not representable
+        Note over PR: payment stays in RETURNED — representment workflow not invoked
+      end
+    else invalid return
+      Note over PR: return rejected — no state transition
+    end
+  end
+```
 
-        rect rgba(0,111,207,0.18)
-          Note over PRP,PRRX: Batch Worker ProcessRepresentmentWF — re-clears a returned transaction on the representment day
-          PRP->>PRRV: validate representment
-          alt valid representment
-            PRP->>PRRX: execute representment
-            rect rgba(217,70,239,0.22)
-              PRRX-->>PRP: state → REPRESENTED
-            end
-          else invalid
-            rect rgba(217,70,239,0.22)
-              Note over PRP: state → DECLINED
-            end
-          end
-        end
+## 8. Representment Workflow
+
+`#ProcessRepresentmentWF` — picked up from the `REPRESENTING` state set by
+[diagram #7](#7-return-processing--representment-eligibility-check). Re-clears
+the returned transaction on the representment day: if validation passes the
+payment moves to `REPRESENTED`, otherwise it falls to `DECLINED`.
+
+```mermaid
+sequenceDiagram
+  autonumber
+
+  box rgba(0,111,207,0.08) Billpay Platform
+    participant PR as Process Returned Payment WF
+    participant PRP as Process Representment WF
+    participant PRRV as Representment Validate
+    participant PRRX as Representment Execute
+  end
+
+  PR->>PRP: hand off (state = REPRESENTING)
+
+  rect rgba(0,111,207,0.15)
+    Note over PRP,PRRX: Batch Worker ProcessRepresentmentWF — re-clears a returned transaction on the representment day
+    PRP->>PRRV: validate representment
+    alt valid representment
+      PRP->>PRRX: execute representment
+      rect rgba(217,70,239,0.22)
+        PRRX-->>PRP: state → REPRESENTED
+      end
+    else invalid representment
+      rect rgba(217,70,239,0.22)
+        Note over PRP: state → DECLINED
       end
     end
   end
 ```
 
-## 8. Inbound payment
+## 9. Inbound payment
 
 ```mermaid
 sequenceDiagram
@@ -540,7 +616,7 @@ sequenceDiagram
   end
 ```
 
-## 9. Paid Events reconciliation
+## 10. Paid Events reconciliation
 
 ```mermaid
 sequenceDiagram
@@ -573,7 +649,7 @@ sequenceDiagram
   end
 ```
 
-## 10. Missing Paid Events reconciliation
+## 11. Missing Paid Events reconciliation
 
 ```mermaid
 sequenceDiagram
@@ -609,7 +685,7 @@ sequenceDiagram
   end
 ```
 
-## 11. Create Payment + Installments (composite)
+## 12. Create Payment + Installments (composite)
 
 ```mermaid
 sequenceDiagram
@@ -635,19 +711,25 @@ sequenceDiagram
 
     rect rgba(0,111,207,0.18)
       CWF->>CIP: invoke CreateImmediatePaymentWF
-      rect rgba(217,70,239,0.22)
-        CIP-->>CWF: payment-id (state → ACCEPTED)
+      alt inner payment ACCEPTED
+        rect rgba(217,70,239,0.22)
+          CIP-->>CWF: payment-id (state → ACCEPTED)
+        end
+        Note over CWF: call Installments API to create installment plan, receive installment-id
+        opt autopay flag
+          Note over CWF: call Autopay API to update autopay
+        end
+      else inner payment DECLINED
+        rect rgba(217,70,239,0.22)
+          CIP-->>CWF: payment-id (state → DECLINED)
+        end
+        Note over CWF: composite short-circuits — no installment plan created, no autopay
       end
-    end
-
-    Note over CWF: call Installments API to create installment plan, receive installment-id
-    opt autopay flag
-      Note over CWF: call Autopay API to update autopay
     end
   end
 
-  Note over C,CWF: Client receives 201 ACCEPTED with payment-id + installment-id — payment fulfillment continues inside the child workflow
-  CWF-->>API: success
+  Note over C,CWF: Client receives 201 with status=ACCEPTED (with installment-id) or DECLINED (no installment-id)
+  CWF-->>API: success (payment-id, status, installment-id?)
   API-->>ODF: 201 Created
-  ODF-->>C: payment-id + installment-id (status=ACCEPTED)
+  ODF-->>C: payment-id + status + installment-id (if ACCEPTED)
 ```
