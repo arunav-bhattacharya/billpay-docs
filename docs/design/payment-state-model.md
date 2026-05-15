@@ -35,6 +35,9 @@ States are colour-coded by **lifecycle position only** — *non-terminal* (the p
 
 ```mermaid
 stateDiagram-v2
+  classDef nonterminal fill:#bfdbfe,stroke:#1d4ed8,stroke-width:2px,color:#0c1d51,font-weight:600
+  classDef terminal fill:#a16207,stroke:#713f12,stroke-width:2px,color:#fef9c3
+
   [*] --> PENDING
 
   PENDING --> SCHEDULED: validate (schedule)
@@ -70,6 +73,9 @@ stateDiagram-v2
   REJECTED --> [*]
   PAID --> [*]
   REPRESENTED --> [*]
+
+  class PENDING,SCHEDULED,ALLOCATIONS_REQUESTED,ALLOCATIONS_RECEIVED,ACCEPTED,PROCESSING,PROCESSED,REPRESENTING nonterminal
+  class PAID,RETURNED,REPRESENTED,DECLINED,CANCELLED,REJECTED terminal
 ```
 
 :::info[Corporate flow nuance]
