@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Build
 
-How the platform is built — the technology choices, the modules in the monorepo, the contracts exposed, the data model, and the deployables that ship to production.
+How the platform is built — the technology choices, the modules in the monorepo, the contracts exposed, the data model, and the schedules wired up at boot.
 
 - [**Principles**](./principles/index.md) — the choices we've made for HTTP client, database, datasource, ORM.
 - [**One-data**](./one-data.md) — the One-Data layer.
@@ -14,4 +14,5 @@ How the platform is built — the technology choices, the modules in the monorep
 - [**Data Model**](./data-model/domain.md) — domain and database models.
 - [**Workflows · Services · Activities**](./workflows/interfaces.md) — interfaces and strategies.
 - [**Schedules**](./schedules.md) — Temporal Schedules wired into batch executors.
-- [**Deployables**](./deployables/one-data-functions.md) — every artifact we ship.
+
+The artifacts we actually ship live under [**Deployment › Deployables**](../deployment/deployables/index.md).

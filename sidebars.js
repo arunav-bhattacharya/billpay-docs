@@ -145,20 +145,6 @@ const sidebars = {
           ],
         },
         'build/schedules',
-        {
-          type: 'category',
-          label: 'Deployables',
-          collapsed: true,
-          link: {type: 'doc', id: 'build/deployables/index'},
-          items: [
-            'build/deployables/one-data-functions',
-            'build/deployables/realtime-app',
-            'build/deployables/batch-app',
-            'build/deployables/codec-server-app',
-            'build/deployables/ui-app',
-            'build/deployables/mocks-app',
-          ],
-        },
       ],
     },
     {
@@ -196,6 +182,20 @@ const sidebars = {
       collapsed: true,
       link: {type: 'doc', id: 'deployment/index'},
       items: [
+        {
+          type: 'category',
+          label: 'Deployables',
+          collapsed: true,
+          link: {type: 'doc', id: 'deployment/deployables/index'},
+          items: [
+            'deployment/deployables/one-data-functions',
+            'deployment/deployables/realtime-app',
+            'deployment/deployables/batch-app',
+            'deployment/deployables/codec-server-app',
+            'deployment/deployables/ui-app',
+            'deployment/deployables/mocks-app',
+          ],
+        },
         'deployment/ci-checks',
         'deployment/code-merge-strategy',
         'deployment/pipeline',

@@ -136,32 +136,12 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
-          {
-            type: 'docSidebar',
-            sidebarId: 'mainSidebar',
-            position: 'left',
-            label: 'Docs',
-          },
-          {
-            to: '/docs/vision',
-            label: 'Vision',
-            position: 'left',
-          },
-          {
-            to: '/docs/architecture/overview',
-            label: 'Architecture',
-            position: 'left',
-          },
-          {
-            to: '/docs/design/diagrams/state-diagram',
-            label: 'State Diagrams',
-            position: 'left',
-          },
-          {
-            to: '/docs/design/diagrams/sequence-diagram',
-            label: 'Sequence Diagrams',
-            position: 'left',
-          },
+          {to: '/docs/vision', label: 'Vision', position: 'left'},
+          {to: '/docs/architecture', label: 'Architecture', position: 'left'},
+          {to: '/docs/design', label: 'Design', position: 'left'},
+          {to: '/docs/build', label: 'Build', position: 'left'},
+          {to: '/docs/testing', label: 'Testing', position: 'left'},
+          {to: '/docs/observability', label: 'Observability', position: 'left'},
           {
             href: `https://github.com/${GH_USER}/${REPO_NAME}`,
             label: 'GitHub',
