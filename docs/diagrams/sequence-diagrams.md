@@ -152,10 +152,15 @@ sequenceDiagram
 ```
 
 :::note[After PROCESSED]
-`PAID` is reached separately by the **Paid Events Processor reconciliation** — see [diagram #8](#8-paid-events-reconciliation).
+`PAID` is reached separately by the **Paid Events Processor reconciliation** — see [diagram #9](#9-paid-events-reconciliation).
 :::
 
-## 3. Corporate payment with allocations
+## 3. Immediate Corporate Payment
+
+`POST /payments` with `payment-date = today` and a corporate marker →
+`#CreateImmediatePaymentWF`. On `ACCEPTED`, the parent fans out to
+`#GetCorporatePaymentAllocationsWF` for the split breakdown, then
+`#ExecuteSplitPaymentWF` runs per split.
 
 ```mermaid
 sequenceDiagram
@@ -168,10 +173,9 @@ sequenceDiagram
   box rgba(0,111,207,0.08) Billpay Platform
     participant API as POST /payments
     participant R as Billpay Router
-    participant P as Parent Workflow
+    participant CIP as Create Immediate Payment WF
     participant IDEMP as Idempotency Check
     participant PVAL as Validation
-    participant PVS as Validation (Schedule)
     participant GPA as Get Corporate Payment Allocations WF
     participant ARQ as Allocations Request
     participant ARC as Allocations Received
@@ -181,39 +185,32 @@ sequenceDiagram
     participant PFL as Fulfillment
   end
 
-  C->>API: POST /payments (corporate)
-  API->>R: route
-  R->>P: invoke
+  C->>API: POST /payments (corporate, today)
+  API->>R: route(date=today, corporate)
+  R->>CIP: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over P,PVS: Realtime Worker · parent is either #CreateImmediatePaymentWF or #CreateSchedulePaymentWF
-    P->>IDEMP: check idempotency
+    Note over CIP,PVAL: Realtime Worker · #CreateImmediatePaymentWF — validates and accepts inline
+    CIP->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
-      IDEMP-->>P: state → PENDING
+      IDEMP-->>CIP: state → PENDING
     end
-    alt parent is CreateImmediatePaymentWF
-      P->>PVAL: validate
-      rect rgba(217,70,239,0.22)
-        PVAL-->>P: state → ACCEPTED
-      end
-    else parent is CreateSchedulePaymentWF
-      P->>PVS: validate schedule
-      rect rgba(217,70,239,0.22)
-        PVS-->>P: state → SCHEDULED
-      end
+    CIP->>PVAL: validate
+    rect rgba(217,70,239,0.22)
+      PVAL-->>CIP: state → ACCEPTED
     end
   end
 
-  Note over C,P: Client receives 201 ACCEPTED or SCHEDULED — allocations and split execution run in the background
-  P-->>API: success (payment-id, ACCEPTED or SCHEDULED)
+  Note over C,CIP: Client receives 201 ACCEPTED — allocations and split execution run in the background
+  CIP-->>API: success (payment-id, ACCEPTED)
   API-->>C: 201 Created
 
   rect rgba(245,158,11,0.18)
-    Note over P,PFL: Async — corporate allocations are fetched, then per-split execution runs in waves
+    Note over CIP,PFL: Async — corporate allocations are fetched, then per-split execution runs in waves
 
     rect rgba(0,111,207,0.15)
       Note over GPA,PSC: Batch Worker · #GetCorporatePaymentAllocationsWF — fetches the split breakdown
-      P->>GPA: trigger allocations workflow
+      CIP->>GPA: trigger allocations workflow
       GPA->>ARQ: request allocations
       rect rgba(217,70,239,0.22)
         ARQ-->>GPA: state → ALLOCATIONS_REQUESTED
@@ -240,7 +237,107 @@ sequenceDiagram
   end
 ```
 
-## 4. Update a scheduled payment
+## 4. Scheduled Corporate Payment
+
+`POST /payments` with `payment-date = future` and a corporate marker →
+`#CreateSchedulePaymentWF`. On `SCHEDULED`, allocations are fetched **up
+front** so they're ready on the payment date. When the date arrives,
+`#ExecuteScheduledPaymentWF` re-validates (`ALLOCATIONS_RECEIVED → ACCEPTED`)
+and `#ExecuteSplitPaymentWF` runs per split.
+
+```mermaid
+sequenceDiagram
+  autonumber
+
+  box rgba(148,163,184,0.06) Caller
+    participant C as Client
+  end
+
+  box rgba(0,111,207,0.08) Billpay Platform
+    participant API as POST /payments
+    participant R as Billpay Router
+    participant CSP as Create Schedule Payment WF
+    participant IDEMP as Idempotency Check
+    participant PVS as Validation (Schedule)
+    participant GPA as Get Corporate Payment Allocations WF
+    participant ARQ as Allocations Request
+    participant ARC as Allocations Received
+    participant PSC as Splits Creation
+    participant SCH as Scheduled Payment Executor
+    participant ESPS as Execute Scheduled Payment WF
+    participant PVX as Validation (Execution)
+    participant ESP as Execute Split Payment WF
+    participant PEX as Execution
+    participant PFL as Fulfillment
+  end
+
+  C->>API: POST /payments (corporate, future)
+  API->>R: route(date=future, corporate)
+  R->>CSP: invoke
+
+  rect rgba(0,111,207,0.15)
+    Note over CSP,PVS: Realtime Worker · #CreateSchedulePaymentWF — validates the schedule, returns SCHEDULED
+    CSP->>IDEMP: check idempotency
+    rect rgba(217,70,239,0.22)
+      IDEMP-->>CSP: state → PENDING
+    end
+    CSP->>PVS: validate schedule
+    rect rgba(217,70,239,0.22)
+      PVS-->>CSP: state → SCHEDULED
+    end
+  end
+
+  CSP-->>API: SCHEDULED
+  API-->>C: 201 Created (SCHEDULED)
+
+  rect rgba(245,158,11,0.18)
+    Note over CSP,PSC: Async (today) — corporate allocations fetched up front so they're ready on payment date
+
+    rect rgba(0,111,207,0.15)
+      Note over GPA,PSC: Batch Worker · #GetCorporatePaymentAllocationsWF — fetches the split breakdown
+      CSP->>GPA: trigger allocations workflow
+      GPA->>ARQ: request allocations
+      rect rgba(217,70,239,0.22)
+        ARQ-->>GPA: state → ALLOCATIONS_REQUESTED
+      end
+      GPA->>ARC: process allocations payload
+      rect rgba(217,70,239,0.22)
+        ARC-->>GPA: state → ALLOCATIONS_RECEIVED
+      end
+      GPA->>PSC: create payment splits
+    end
+  end
+
+  Note over SCH,ESPS: On payment date · Scheduled Payment Executor fires (waves of 2,500 / minute)
+
+  rect rgba(245,158,11,0.18)
+    Note over SCH,PFL: Batch chain — re-validate, then execute and fulfill each split
+
+    rect rgba(0,111,207,0.15)
+      Note over SCH,PVX: Batch Worker · #ExecuteScheduledPaymentWF — re-validates and accepts inline
+      SCH->>ESPS: pick up ALLOCATIONS_RECEIVED payments
+      ESPS->>PVX: validate
+      rect rgba(217,70,239,0.22)
+        PVX-->>ESPS: state → ACCEPTED
+      end
+    end
+
+    rect rgba(0,111,207,0.15)
+      Note over ESP,PFL: Batch Worker · #ExecuteSplitPaymentWF — drained by the Corporate Allocations Processor Schedule
+      ESPS->>ESP: trigger split execution
+      ESP->>PEX: execute split
+      rect rgba(217,70,239,0.22)
+        PEX-->>ESP: state → PROCESSING
+      end
+      ESP->>PFL: fulfill split
+      rect rgba(217,70,239,0.22)
+        PFL-->>ESP: state → PROCESSED
+      end
+    end
+  end
+```
+
+## 5. Update a scheduled payment
 
 ```mermaid
 sequenceDiagram
@@ -295,7 +392,7 @@ sequenceDiagram
   API-->>C: 200 OK
 ```
 
-## 5. Cancel a payment
+## 6. Cancel a payment
 
 ```mermaid
 sequenceDiagram
@@ -334,7 +431,7 @@ sequenceDiagram
   API-->>C: response
 ```
 
-## 6. Return processing (with representment branch)
+## 7. Return processing (with representment branch)
 
 ```mermaid
 sequenceDiagram
@@ -394,7 +491,7 @@ sequenceDiagram
   end
 ```
 
-## 7. Inbound payment
+## 8. Inbound payment
 
 ```mermaid
 sequenceDiagram
@@ -443,7 +540,7 @@ sequenceDiagram
   end
 ```
 
-## 8. Paid Events reconciliation
+## 9. Paid Events reconciliation
 
 ```mermaid
 sequenceDiagram
@@ -476,7 +573,7 @@ sequenceDiagram
   end
 ```
 
-## 9. Missing Paid Events reconciliation
+## 10. Missing Paid Events reconciliation
 
 ```mermaid
 sequenceDiagram
@@ -512,7 +609,7 @@ sequenceDiagram
   end
 ```
 
-## 10. Create Payment + Installments (composite)
+## 11. Create Payment + Installments (composite)
 
 ```mermaid
 sequenceDiagram
