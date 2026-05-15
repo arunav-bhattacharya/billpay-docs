@@ -43,10 +43,18 @@ and Clearing-Settlement events have arrived.
 
 ```mermaid
 flowchart LR
-  T[External Transaction Events Tracker] -->|both events present| P[#PaidEventsProcessingWF]
-  P --> L[trans_lfcyc_event += PAID]
-  P --> D[trans_dtl.status = PAID]
-  P --> E[Publish PAID event]
+  T["External Transaction<br/>Events Tracker"] -- "both events<br/>present" --> P["#PaidEvents<br/>ProcessingWF"]
+  P --> L["trans_lfcyc_event<br/>+= PAID"]
+  P --> D["trans_dtl.status<br/>= PAID"]
+  P --> E["Publish PAID<br/>event"]
+
+  classDef store fill:#ede9fe,stroke:#7c3aed,stroke-width:1.5px,color:#4c1d95;
+  classDef workflow fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#1e3a8a;
+  classDef terminal fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
+
+  class T store;
+  class P workflow;
+  class L,D,E terminal;
 ```
 
 ## 4. `#MissingPaidEventsProcessingWF` — Missing Paid Events Processor

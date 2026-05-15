@@ -17,7 +17,7 @@ A single platform that orchestrates the full lifecycle of a credit-card bill pay
 | **Account types** | Consumer (individual cards) and Corporate (commercial / managed accounts) |
 | **Origination source** | Mobile app, web, IVR, corporate batch file, partner APIs, autopay rules, customer-service tools — every channel that can start a payment |
 | **Payment method** | **Pull** (we debit the customer's funding account) and **Push** (the customer's bank credits us) |
-| **Cadence** | **Immediate** one-shot, **Scheduled** future-dated, and **Recurring** auto-pay arrangements |
+| **Payment Frequency** | **Immediate** one-shot, **Scheduled** future-dated, and **Recurring** auto-pay arrangements |
 
 Every payment a cardmember initiates — through the Amex mobile app, a corporate batch file, IVR, or an autopay rule set up two years ago — flows through Billpay.
 
@@ -25,7 +25,7 @@ Every payment a cardmember initiates — through the Amex mobile app, a corporat
 
 Historically, bill payments at Amex were built *per market*, *per channel*, *per account type*. The result: dozens of point integrations, divergent state models, fragmented operations, and a long tail of edge cases nobody owned end-to-end. Adding a market or absorbing a regulator rule meant touching multiple systems.
 
-Billpay's product bet is that **the payment lifecycle itself is universal** — initiate → validate → clear → post → fulfill → settle — and the *variance* between markets, account types, methods and cadences can be captured as **configuration and pluggable strategies layered on a shared orchestration core**.
+Billpay's product bet is that **the payment lifecycle itself is universal** — initiate → validate → clear → post → fulfill → settle — and the *variance* between markets, account types, methods and frequencies can be captured as **configuration and pluggable strategies layered on a shared orchestration core**.
 
 ## The speed problem we're solving
 

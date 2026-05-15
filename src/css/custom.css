@@ -302,6 +302,10 @@ html { scroll-behavior: smooth; }
 .bp-pill--danger  { background: rgba(239,68,68,0.12);  color:#dc2626; border-color:rgba(239,68,68,0.25); }
 .bp-pill--muted   { background: rgba(148,163,184,0.12); color:#64748b; border-color:rgba(148,163,184,0.25); }
 
+/* Terminal vs non-terminal status pill — used in the Payment State Model */
+.bp-pill--terminal { background: rgba(100,116,139,0.18); color:#475569; border-color:rgba(100,116,139,0.35); }
+[data-theme='dark'] .bp-pill--terminal { color:#cbd5e1; }
+
 /* Hero on home page */
 .bp-hero {
   background: var(--bp-gradient-2);

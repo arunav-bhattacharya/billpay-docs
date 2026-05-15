@@ -9,7 +9,7 @@ sidebar_position: 2
 
 ## Core principles
 
-1. **Workflows are the spine; services are the variance.** Each payment lifecycle (immediate / scheduled / recurring; pull / push) is a Temporal Workflow that encodes *what must happen and in what order*. Business-rule variance per market / account / channel lives in **Service implementations** that the workflow calls as activities. New market = new service implementation, not a forked workflow.
+1. **Workflows are the spine; services are the variance.** Each payment lifecycle (immediate / scheduled / recurring; pull / push) is a Temporal Workflow that encodes *what must happen and in what order*. Business-rule variance per market / account / origination source / payment method lives in **Service implementations** that the workflow calls as activities. New market = new service implementation, not a forked workflow.
 2. **Durability over cleverness.** Money movement cannot lose state. Temporal gives us replay-safe history, native retries / timers / signals / queries, and long-running flows as first-class. We don't build bespoke sagas or in-house cron.
 3. **One canonical state model.** All payments move through the same states (`PENDING`, `ACCEPTED`, `PROCESSED`, `PAID`, `RETURNED`, `CANCELLED`, …). The state model is the contract between platform and operators.
 4. **Contract-versioned entry points.** Public One-Data Functions (e.g. `CreatePayment.v3`) are versioned contracts. Internal refactors do not break channels.
@@ -36,6 +36,11 @@ sidebar_position: 2
 
 ## What we're explicitly NOT building
 
-- A general-purpose payments engine. Billpay is for **credit-card bill payments**; the abstractions are tuned for that lifecycle.
-- A homegrown workflow engine. We use Temporal and stay close to its idioms.
-- A new ledger. We integrate with existing card and funding systems of record.
+Mirroring the **out-of-scope** section of the [Product Vision](./product.md#out-of-scope) — engineering decisions should reinforce, not blur, these boundaries.
+
+- **A general-purpose payments engine.** Billpay is for **credit-card bill payments**; every abstraction (state model, workflows, services) is tuned for that lifecycle. We resist generalising into adjacent flows (purchases, transfers, payouts).
+- **A homegrown workflow engine.** We use **Temporal** and stay close to its idioms — workflows, activities, signals, queries, schedules. We do not wrap it in a bespoke DSL or invent a parallel orchestrator.
+- **A new ledger or balance system of record.** We integrate with the **card account balance**, **Open-To-Buy** and **funding-source** systems that already own that truth. Billpay never stores the authoritative balance.
+- **A new clearing or settlement network.** We send instructions to existing clearing networks and consume their events; we do not move money ourselves.
+- **A new statement / billing generator.** Statement generation stays with the system that owns the cycle.
+- **A channel UI.** The standalone Billpay UI is for operators only — cardmember-facing surfaces (mobile, web, IVR) remain the property of the channel teams that integrate with our One-Data Functions.

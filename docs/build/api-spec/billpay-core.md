@@ -10,6 +10,10 @@ These are the REST endpoints owned by the Billpay service. Each request flows
 through the **Billpay Router**, which mints a `workflow-key` and invokes the
 appropriate Temporal workflow.
 
+:::note[Source of truth]
+This page summarises the public Billpay Core REST API. The **authoritative reference will be rendered directly from the OpenAPI / Swagger specification embedded in the Billpay-core source code** — once the swagger-rendering build step is wired in, this page will be replaced (or augmented) by an auto-generated reference and a link to the live Swagger UI. Until then, treat the table below as the canonical map from endpoints to workflows.
+:::
+
 ## Core endpoints
 
 ### `POST /payments`

@@ -80,10 +80,29 @@ const sidebars = {
           collapsed: true,
           link: {type: 'doc', id: 'build/principles/index'},
           items: [
-            'build/principles/http-client',
-            'build/principles/database',
-            'build/principles/datasource',
-            'build/principles/orm',
+            {
+              type: 'category',
+              label: 'Tool Selection',
+              collapsed: true,
+              link: {type: 'doc', id: 'build/principles/tool-selection/index'},
+              items: [
+                'build/principles/tool-selection/http-client',
+                'build/principles/tool-selection/database',
+                'build/principles/tool-selection/datasource',
+                'build/principles/tool-selection/orm',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Core Build',
+              collapsed: true,
+              link: {type: 'doc', id: 'build/principles/core-build/index'},
+              items: [
+                'build/principles/core-build/temporal-workflows',
+                'build/principles/core-build/payment-services',
+                'build/principles/core-build/temporal-activities',
+              ],
+            },
           ],
         },
         'build/one-data',

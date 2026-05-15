@@ -19,7 +19,7 @@ flowchart LR
 | One-Data Function | Billpay Core API | Router decisions | Parent Workflow | Child Workflows |
 | --- | --- | --- | --- | --- |
 | **CreatePayment.v3** | `POST /payments` | `date = today`, single instruction | [`#CreateImmediatePaymentWF`](../workflows/core.md#1-createimmediatepaymentwf) (Realtime) | **Consumer + Split**: [`#ExecuteSplitPaymentWF`](../workflows/core.md#4-executesplitpaymentwf) (Realtime) <br/> **Consumer + Full**: no child <br/> **Corporate**: [`#GetCorporatePaymentAllocationsWF`](../workflows/core.md#9-getcorporatepaymentallocationswf) (Batch) → [`#ExecuteSplitPaymentWF`](../workflows/core.md#4-executesplitpaymentwf) (Batch, via *Corporate Allocations Processor Schedule*) |
-| **CreatePayment.v3** | `POST /payments` | `date = today`, **multiple** instructions | `#CreatePaymentWithMultipleInstructionsWF` (Realtime) — see [Composite](../workflows/composite.md) | per-instruction [`#CreateImmediatePaymentWF`](../workflows/core.md#1-createimmediatepaymentwf) |
+| **CreatePayment.v3** | `POST /payments` | `date = today`, **multiple** instructions | [`#CreatePaymentWithMultipleInstructionsWF`](../workflows/composite.md#2-create-payment-with-multiple-instructions) (Realtime) | per-instruction [`#CreateImmediatePaymentWF`](../workflows/core.md#1-createimmediatepaymentwf) |
 | **CreatePayment.v3** | `POST /payments` | `date = future`, single instruction | [`#CreateSchedulePaymentWF`](../workflows/core.md#2-createschedulepaymentwf) (Realtime) | **Consumer**: later → [`#ExecuteScheduledPaymentWF`](../workflows/core.md#3-executescheduledpaymentwf) (Batch); if Split → [`#ExecuteSplitPaymentWF`](../workflows/core.md#4-executesplitpaymentwf) (Batch). <br/> **Corporate**: [`#GetCorporatePaymentAllocationsWF`](../workflows/core.md#9-getcorporatepaymentallocationswf) (Batch) **first** → then [`#ExecuteScheduledPaymentWF`](../workflows/core.md#3-executescheduledpaymentwf) (Batch) → [`#ExecuteSplitPaymentWF`](../workflows/core.md#4-executesplitpaymentwf) (Batch, via *Corporate Allocations Processor Schedule*) |
 | **UpdatePayment.v1** | `PUT /payments/{id}` | create workflow-key, invoke | [`#UpdatePaymentWF`](../workflows/core.md#6-updatepaymentwf) (Realtime) | [`#CancelPaymentWF`](../workflows/core.md#5-cancelpaymentwf), [`#CreateSchedulePaymentWF`](../workflows/core.md#2-createschedulepaymentwf) |
 | **DeletePayment.v1** | `DELETE /payments/{id}` | create workflow-key, invoke | [`#CancelPaymentWF`](../workflows/core.md#5-cancelpaymentwf) (Realtime) | – |
@@ -39,31 +39,43 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  start(["POST /payments arrives"]) --> instr{"Number of instructions?"}
-  instr -->|multiple| MULTI["#CreatePaymentWithMultipleInstructionsWF"]
-  instr -->|single| date{"payment-date?"}
+  start(["POST /payments<br/>arrives"]) --> instr{"Number of<br/>instructions?"}
+  instr -- multiple --> MULTI["#CreatePayment<br/>WithMultiple<br/>InstructionsWF"]
+  instr -- single --> date{"payment-date?"}
 
-  date -->|today| imm["#CreateImmediatePaymentWF"]
-  date -->|future| sched["#CreateSchedulePaymentWF"]
+  date -- today --> imm["#CreateImmediate<br/>PaymentWF"]
+  date -- future --> sched["#CreateSchedule<br/>PaymentWF"]
 
   %% Immediate branch
-  imm --> kind{"Account kind?"}
-  kind -->|Consumer| splitQ1{"Split payment?"}
-  splitQ1 -->|No| done1["Stay in parent WF<br/>execute · fulfill"]
-  splitQ1 -->|Yes| ESP1["#ExecuteSplitPaymentWF<br/>Realtime"]
-  kind -->|Corporate| GPA1["#GetCorporatePaymentAllocationsWF<br/>Batch"]
+  imm --> kind{"Account<br/>kind?"}
+  kind -- Consumer --> splitQ1{"Split<br/>payment?"}
+  splitQ1 -- No --> done1["Stay in parent WF<br/>execute · fulfill"]
+  splitQ1 -- Yes --> ESP1["#ExecuteSplit<br/>PaymentWF<br/>Realtime"]
+  kind -- Corporate --> GPA1["#GetCorporate<br/>PaymentAllocationsWF<br/>Batch"]
   GPA1 --> CAPS1["Corporate Allocations<br/>Processor Schedule"]
-  CAPS1 --> ESP2["#ExecuteSplitPaymentWF<br/>Batch"]
+  CAPS1 --> ESP2["#ExecuteSplit<br/>PaymentWF<br/>Batch"]
 
   %% Scheduled branch
-  sched --> kind2{"Account kind?"}
-  kind2 -->|Corporate| GPA2["#GetCorporatePaymentAllocationsWF<br/>Batch · fetched first"]
-  GPA2 --> EXEC2["#ExecuteScheduledPaymentWF<br/>Batch"]
+  sched --> kind2{"Account<br/>kind?"}
+  kind2 -- Corporate --> GPA2["#GetCorporate<br/>PaymentAllocationsWF<br/>Batch · fetched first"]
+  GPA2 --> EXEC2["#ExecuteScheduled<br/>PaymentWF<br/>Batch"]
   EXEC2 --> CAPS2["Corporate Allocations<br/>Processor Schedule"]
-  CAPS2 --> ESP4["#ExecuteSplitPaymentWF<br/>Batch"]
+  CAPS2 --> ESP4["#ExecuteSplit<br/>PaymentWF<br/>Batch"]
 
-  kind2 -->|Consumer| EXEC["#ExecuteScheduledPaymentWF<br/>Batch · later"]
-  EXEC --> splitQ2{"Split payment?"}
-  splitQ2 -->|No| done2["Stay in executor<br/>execute · fulfill"]
-  splitQ2 -->|Yes| ESP3["#ExecuteSplitPaymentWF<br/>Batch"]
+  kind2 -- Consumer --> EXEC["#ExecuteScheduled<br/>PaymentWF<br/>Batch · later"]
+  EXEC --> splitQ2{"Split<br/>payment?"}
+  splitQ2 -- No --> done2["Stay in executor<br/>execute · fulfill"]
+  splitQ2 -- Yes --> ESP3["#ExecuteSplit<br/>PaymentWF<br/>Batch"]
+
+  classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+  classDef workflow fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#1e3a8a;
+  classDef schedule fill:#ede9fe,stroke:#7c3aed,stroke-width:1.5px,color:#4c1d95;
+  classDef terminal fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
+  classDef entry fill:#e5e7eb,stroke:#4b5563,stroke-width:1.5px,color:#111827;
+
+  class start entry;
+  class instr,date,kind,kind2,splitQ1,splitQ2 decision;
+  class MULTI,imm,sched,ESP1,ESP2,ESP3,ESP4,GPA1,GPA2,EXEC,EXEC2 workflow;
+  class CAPS1,CAPS2 schedule;
+  class done1,done2 terminal;
 ```

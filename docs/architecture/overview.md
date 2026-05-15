@@ -213,15 +213,38 @@ scenarios.
 
 ## Persistence model
 
-Three tables back every payment:
+Billpay's state lives in a small set of Oracle tables. Each one has a focused job:
 
-- **`trans_dtl`** — the current state of each payment.
-- **`trans_lfcyc_event`** — append-only lifecycle event log per payment.
-- **`split_trans_dtl` + `split_trans_lfcyc_event`** — same pair, but for split-level transactions.
-- **`idempotency_checker`** — guards duplicate requests at the API boundary.
-- **`External Transaction Events Tracker`** — tracks Clearing/Settlement and AR-Posted events so the **Paid Events Processor** can close out a payment.
-- **`ORIG_TRANS_REFER_MAP`** — maps a replacement payment back to the original (used by `#UpdatePaymentWF`).
-- **`notification_tracker`** — durable record of every external notification we owe.
+| Table | What it holds |
+| --- | --- |
+| **`trans_dtl`** | The **current state** of each payment — one row per payment, mutated as the workflow advances. |
+| **`trans_lfcyc_event`** | **Append-only** lifecycle event log — every state transition for every payment, in order. The audit trail. |
+| **`split_trans_dtl` + `split_trans_lfcyc_event`** | The same pair as above, but at the **split-instruction** level — for payments broken into multiple legs (e.g. corporate allocations). |
+| **`card_acct`** | **Account-details repository** — cached card-account metadata Billpay needs to make routing and validation decisions without round-tripping to the system of record on every request. |
+| **`idempotency_checker`** | Guards **duplicate requests at the API boundary** — first-write wins, retries are rejected with the original outcome. |
+| **`notification_tracker`** | Durable record of **every external notification we owe** — outbound webhooks, lifecycle event publishes — with retry state. |
+| **`orig_trans_refer_map`** | Maps a **replacement payment back to the original** — used by `#UpdatePaymentWF` to preserve the audit chain when a scheduled payment is replaced. |
+| **`external_trans_events_tracker`** | Tracks **Clearing/Settlement** and **AR-Posted** events for each payment so the **Paid Events Processor** can close it out once both have arrived. |
+| **`trans_exec_queue`** | The **scheduler work queue** — payments that are due to be picked up and executed by a batch worker (e.g. scheduled payments at their fire time). |
+| **`trans_exec_context`** | The **execution context** that schedulers attach to each queued transaction — payload and resume state the batch workflow needs to pick up where the realtime side left off. |
+
+The hot path (`trans_dtl`, `trans_lfcyc_event`, `idempotency_checker`) is what every API request touches. The reconciliation path (`external_trans_events_tracker`, `notification_tracker`) is what schedulers and event handlers churn through. The scheduler path (`trans_exec_queue` + `trans_exec_context`) is the boundary between realtime intake and batch execution.
+
+## Why Temporal
+
+Billpay is intentionally **Temporal-first**, not "Temporal happens to be the queue we picked." The choice is load-bearing — the architecture above assumes Temporal's guarantees at every layer.
+
+**Scale of orchestration.** A single payment can fan out into a chain of 20+ activities: idempotency check, validation, account lookup, OTB hold, clearing, settlement, posting, notification, lifecycle publish, reconciliation. Multiply that by every market's variant (consumer vs. corporate, pull vs. push, immediate vs. scheduled vs. recurring) and you have hundreds of distinct orchestrations, each with its own retry, timeout and compensation needs. Hand-rolling that on top of a message bus would mean reinventing — badly — what Temporal already provides.
+
+**Durability without ceremony.** Money movement must not lose state across restarts, deploys, downstream outages, or human cancellation. Temporal's event-history model gives this for free: every workflow can be **replayed** from history to a deterministic state. We don't write our own checkpoint tables; we don't reconstruct sagas from logs.
+
+**Long-running flows are first-class.** A scheduled payment six months out is *just a workflow that's sleeping* — no `cron + DB poll` glue, no "did we miss it?" reconciliation job for that case. A recurring autopay is the same workflow that loops on a timer. Temporal makes the wall-clock a primitive.
+
+**Native retries, timers, signals, queries.** Downstream APIs flap. Clearing networks are batch. Customer-service tools need to signal cancellations into in-flight workflows. Operators need to ask "what state is this payment in right now?" from a UI. All four are Temporal primitives, not features we have to build.
+
+**Operability.** The Temporal Web UI gives operations a single surface to find any payment, see its full event history, replay it, signal it, cancel it. Without Temporal we would need to build that surface ourselves — across every workflow we own.
+
+**Boundaries we accept in return.** Temporal demands **deterministic workflow code** (no `now()`, no random, no direct I/O — everything non-deterministic goes through an activity). That discipline shapes how we factor code: workflows orchestrate, services do the work. It is a constraint we lean into, because it is also what gives us replay safety.
 
 Move to [Components](components.md) for a deeper look at each block, or jump
 straight to the [State Model](../design/payment-state-model.md) to see how a payment evolves.

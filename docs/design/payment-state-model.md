@@ -12,6 +12,8 @@ serves both payment-level (`trans_dtl`) and split-level
 
 ## The states
 
+States are colour-coded by **lifecycle position only** — *non-terminal* (the payment is still moving) versus *terminal* (the payment is settled into a final state and will not transition further).
+
 | State | Meaning | Terminal? |
 | --- | --- | --- |
 | <span className="bp-pill">PENDING</span> | Request accepted into Billpay; idempotency row written | No |
@@ -20,14 +22,14 @@ serves both payment-level (`trans_dtl`) and split-level
 | <span className="bp-pill">ALLOCATIONS_RECEIVED</span> | GPA returned allocations; ready to execute splits | No |
 | <span className="bp-pill">ACCEPTED</span> | Validated for execution today | No |
 | <span className="bp-pill">PROCESSING</span> | Sent to Clearing / Posting; awaiting fulfillment | No |
-| <span className="bp-pill bp-pill--success">PROCESSED</span> | Internally fulfilled (Accounting / B&C / Comms notified) | No |
-| <span className="bp-pill bp-pill--success">PAID</span> | AR posted **and** Clearing settled — closed out | **Yes** |
-| <span className="bp-pill bp-pill--warn">RETURNED</span> | Money came back from clearing | **Yes** |
+| <span className="bp-pill">PROCESSED</span> | Internally fulfilled (Accounting / B&C / Comms notified) | No |
 | <span className="bp-pill">REPRESENTING</span> | Retry transaction created after a return | No |
-| <span className="bp-pill bp-pill--success">REPRESENTED</span> | Representment cleared successfully | **Yes** |
-| <span className="bp-pill bp-pill--danger">DECLINED</span> | Validation failed (either at scheduling or at execution) | **Yes** |
-| <span className="bp-pill bp-pill--muted">CANCELLED</span> | Cancelled before reaching `PROCESSING` | **Yes** |
-| <span className="bp-pill bp-pill--danger">REJECTED</span> | Inbound payment declined and rejected back | **Yes** |
+| <span className="bp-pill bp-pill--terminal">PAID</span> | AR posted **and** Clearing settled — closed out | **Yes** |
+| <span className="bp-pill bp-pill--terminal">RETURNED</span> | Money came back from clearing | **Yes** |
+| <span className="bp-pill bp-pill--terminal">REPRESENTED</span> | Representment cleared successfully | **Yes** |
+| <span className="bp-pill bp-pill--terminal">DECLINED</span> | Validation failed (either at scheduling or at execution) | **Yes** |
+| <span className="bp-pill bp-pill--terminal">CANCELLED</span> | Cancelled before reaching `PROCESSING` | **Yes** |
+| <span className="bp-pill bp-pill--terminal">REJECTED</span> | Inbound payment declined and rejected back | **Yes** |
 
 ## The big picture
 

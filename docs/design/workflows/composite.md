@@ -23,27 +23,26 @@ Triggered by `POST /paymentInstallments`.
 3. *(optional)* Call the **Update Autopay** API
 
 ```mermaid
-sequenceDiagram
-  autonumber
-  participant Client
-  participant API as Billpay Core API
-  participant CWF as #CreatePaymentInstallment.v1 (composite)
-  participant CIP as #CreateImmediatePaymentWF
-  participant INST as Installments API
-  participant AUTO as Autopay API
+flowchart LR
+  CR["POST /paymentInstallments"] --> COMP["#CreatePaymentInstallment.v1<br/>(composite)"]
+  COMP --> CIP["#CreateImmediate<br/>PaymentWF"]
+  CIP --> INST["Installments API<br/>create plan"]
+  INST --> AP{"autopay<br/>flag?"}
+  AP -- Yes --> AUTO["Autopay API<br/>update"]
+  AP -- No --> DONE["Return<br/>payment-id"]
+  AUTO --> DONE
 
-  Client->>API: POST /paymentInstallments
-  API->>CWF: invoke composite workflow
-  CWF->>CIP: child workflow
-  CIP-->>CWF: payment-id (PROCESSED)
-  CWF->>INST: create installment plan
-  INST-->>CWF: OK
-  alt autopay flag = true
-    CWF->>AUTO: update autopay
-    AUTO-->>CWF: OK
-  end
-  CWF-->>API: success
-  API-->>Client: 201 Created
+  classDef entry fill:#e5e7eb,stroke:#4b5563,stroke-width:1.5px,color:#111827;
+  classDef workflow fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#1e3a8a;
+  classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+  classDef ext fill:#ede9fe,stroke:#7c3aed,stroke-width:1.5px,color:#4c1d95;
+  classDef terminal fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
+
+  class CR entry;
+  class COMP,CIP workflow;
+  class AP decision;
+  class INST,AUTO ext;
+  class DONE terminal;
 ```
 
 ## 2. Create Payment with Multiple Instructions
@@ -58,10 +57,18 @@ request — for example, paying different amounts to several accounts in one sho
 
 ```mermaid
 flowchart LR
-  CR[POST /payments with N instructions] --> V[Validate composite payment]
-  V --> A[Spawn #CreateImmediatePaymentWF #1]
-  V --> B[Spawn #CreateImmediatePaymentWF #2]
-  V --> C[Spawn #CreateImmediatePaymentWF #N]
+  CR["POST /payments<br/>with N instructions"] --> V["Validate<br/>composite payment"]
+  V --> A["#CreateImmediate<br/>PaymentWF · #1"]
+  V --> B["#CreateImmediate<br/>PaymentWF · #2"]
+  V --> C["#CreateImmediate<br/>PaymentWF · #N"]
+
+  classDef entry fill:#e5e7eb,stroke:#4b5563,stroke-width:1.5px,color:#111827;
+  classDef step fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+  classDef workflow fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#1e3a8a;
+
+  class CR entry;
+  class V step;
+  class A,B,C workflow;
 ```
 
 Each child workflow runs independently — partial successes are surfaced back to

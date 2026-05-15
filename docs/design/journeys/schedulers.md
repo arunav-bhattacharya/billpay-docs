@@ -27,10 +27,17 @@ collide with the bars.
 
 ```mermaid
 %%{init: {
-  'theme': 'base',
   'themeVariables': {
     'fontSize': '16px',
-    'fontFamily': 'JetBrains Mono, monospace'
+    'fontFamily': 'JetBrains Mono, monospace',
+    'titleColor': '#cbd5e1',
+    'sectionBkgColor': 'rgba(148,163,184,0.10)',
+    'altSectionBkgColor': 'rgba(148,163,184,0.04)',
+    'taskTextColor': '#0f172a',
+    'taskTextLightColor': '#0f172a',
+    'taskTextOutsideColor': '#cbd5e1',
+    'taskTextDarkColor': '#0f172a',
+    'gridColor': 'rgba(148,163,184,0.4)'
   },
   'gantt': {
     'leftPadding': 260,
@@ -91,5 +98,4 @@ timeline
          : Settled event arrives
          : Paid Events Processor closes payment → PAID
   Day 2  : (If either event still missing) Missing Paid Events Processor probes upstream
-  Retention end : Data Purger removes the payment record
 ```
