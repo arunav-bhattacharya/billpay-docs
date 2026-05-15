@@ -56,6 +56,7 @@ For example, this is a service whose impl varies across three dimensions:
 | 8 | `PaymentScheduledNotificationService` | None | Notify systems when a payment is `SCHEDULED`. | <span className="bp-pillchain"><span className="bp-pill bp-pill--warn">source/freq</span><span className="bp-pillchain__plus">+</span><span className="bp-pill bp-pill--warn">acct-type</span><span className="bp-pillchain__plus">+</span><span className="bp-pill bp-pill--warn">market</span></span> |
 | 9 | `PaymentDeclinedNotificationService` | None | Notify when a payment is `DECLINED` during immediate or scheduling. | <span className="bp-pillchain"><span className="bp-pill bp-pill--warn">source/freq</span><span className="bp-pillchain__plus">+</span><span className="bp-pill bp-pill--warn">acct-type</span></span> |
 | 10 | `PaymentDeclinedOnExecutionNotificationService` | None | Notify when a `SCHEDULED` payment is `DECLINED` at execution. | <span className="bp-pillchain"><span className="bp-pill bp-pill--warn">source/freq</span><span className="bp-pillchain__plus">+</span><span className="bp-pill bp-pill--warn">acct-type</span></span> |
+| 29 | `PaymentInvalidReturnNotificationService` | None | Notify when a return event fails `PaymentReturnValidationService` — payment stays in its current state, no transition. | <span className="bp-pillchain"><span className="bp-pill bp-pill--warn">acct-type</span><span className="bp-pillchain__plus">+</span><span className="bp-pill bp-pill--warn">market</span></span> |
 
 ## Allocations (Corporate)
 

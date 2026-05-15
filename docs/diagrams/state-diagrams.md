@@ -181,6 +181,7 @@ stateDiagram-v2
 - **idempotency + validate** → `ExistingPaymentIdempotencyService` + `PaymentReturnValidationService`
 - **return** → `PaymentReturnExecutionService` + `PaymentStateTransitionService`
 - **create representment** → `PaymentRepresentmentEligibilityService` + `PaymentRepresentmentCreationService`
+- **invalid return** (no state transition) → `PaymentInvalidReturnNotificationService`
 :::
 
 ## 8. `#ProcessRepresentmentWF`

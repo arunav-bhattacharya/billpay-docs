@@ -496,6 +496,7 @@ sequenceDiagram
     participant PR as Process Returned Payment WF
     participant IDEMP as Idempotency Check
     participant PRV as Return Validation
+    participant PIRN as Invalid Return Notify
     participant PRX as Return Execution
     participant PRE as Representment Elig.
     participant PRC as Representment Create
@@ -526,7 +527,8 @@ sequenceDiagram
         Note over PR: payment stays in RETURNED — representment workflow not invoked
       end
     else invalid return
-      Note over PR: return rejected — no state transition
+      PR->>PIRN: notify invalid return
+      Note over PR,PIRN: no state transition — payment stays in its current state
     end
   end
 ```

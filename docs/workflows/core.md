@@ -128,6 +128,7 @@ For the state-machine view of every workflow on a single page, jump to
    - `PAID` / `PROCESSING` / `PROCESSED` → `RETURNED` via `PaymentReturnExecutionService` + `PaymentStateTransitionService`
    - If representable (`PaymentRepresentmentEligibilityService`):
      - Create a new `REPRESENTING` presentment via `PaymentRepresentmentCreationService`
+3. **Else (invalid return):** notify via `PaymentInvalidReturnNotificationService` — no state transition, payment stays in its current state
 
 ## 8. `#ProcessRepresentmentWF`
 
