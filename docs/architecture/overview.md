@@ -110,7 +110,7 @@ events loop back through the Event Handlers on the right.
       <span className="bp-arch__num">06</span>
       <div>
         <h4>Payment Services</h4>
-        <p>Single-responsibility activities composed by workflows</p>
+        <p>Business-rule units · compose activities · own activity options</p>
       </div>
     </div>
     <div className="bp-arch__items">
@@ -126,6 +126,25 @@ events loop back through the Event Handlers on the right.
   <div className="bp-arch__layer">
     <div className="bp-arch__head">
       <span className="bp-arch__num">07</span>
+      <div>
+        <h4>Temporal Activities</h4>
+        <p>Reusable I/O units · invoked by services with per-call options</p>
+      </div>
+    </div>
+    <div className="bp-arch__items">
+      <span className="bp-arch__item">Clearing call</span>
+      <span className="bp-arch__item">AR decrement</span>
+      <span className="bp-arch__item">OTB increase</span>
+      <span className="bp-arch__item">Lifecycle write / publish</span>
+      <span className="bp-arch__item">Notification dispatch</span>
+    </div>
+  </div>
+
+  <div className="bp-arch__arrow" aria-hidden="true"></div>
+
+  <div className="bp-arch__layer">
+    <div className="bp-arch__head">
+      <span className="bp-arch__num">08</span>
       <div>
         <h4>External Systems</h4>
         <p>Side-effect destinations</p>
@@ -191,22 +210,20 @@ The durable orchestration engine. Two worker types:
 | **Realtime** | Triggered by an end-user request that awaits a response | `#CreateImmediatePaymentWF`, `#UpdatePaymentWF`, `#CancelPaymentWF` |
 | **Batch** | Triggered asynchronously by events or schedules | `#ExecuteScheduledPaymentWF`, `#ProcessReturnedPaymentWF`, `#ProcessInboundPaymentWF` |
 
-A workflow is composed of **services** (Temporal activities) that perform
-state transitions or call external systems.
+Workflows call **Payment Services**; the services in turn compose **Temporal Activities**. Workflows themselves never invoke activities directly.
 
 ### 5. Payment Services
-The **reusable** building blocks. A service does exactly one job: validate,
-transition state, call clearing, fulfill, notify, etc. Services are designed
-to be composed across workflows, with **variations** chosen per source,
-account-type or market. See the
-[Payment Services reference](../design/services.md) for the full list.
+The **business-rule units**. A service does exactly one job — validate, transition state, call clearing, fulfill, notify — and is pluggable per **source**, **account-type** or **market**. Each service **composes one or more Temporal Activities** and **owns the activity options** (timeouts, retry policy) it passes down to each call. See the [Payment Services reference](../design/services.md) for the full list.
 
-### 6. Event Handlers
+### 6. Temporal Activities
+The **reusable I/O units**. Activities are where real-world side-effects happen — calls to clearing, AR, OTB, DB writes, lifecycle event publishes, outbound notifications. The same activity is reused across multiple services; each invoking service decides the `ActivityOptions` for its call. Activities do not call other activities and do not own their own retry / timeout defaults. See [Build › Core Build › Temporal Activities](../build/principles/core-build/temporal-activities.md).
+
+### 7. Event Handlers
 Event-driven One-Data functions that bridge external systems back into
 Billpay's workflows or its `External Transaction Events Tracker`. They turn
 async events into either workflow triggers or state-transition records.
 
-### 7. Schedules
+### 8. Schedules
 Temporal Schedules that fire batch workflows in waves (e.g. 2,500 scheduled
 payments / minute), plus reconciliation jobs that close out partial-event
 scenarios.

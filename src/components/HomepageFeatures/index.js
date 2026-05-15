@@ -64,13 +64,19 @@ const FEATURES = [
   {
     icon: '🧩',
     title: 'Services',
-    desc: '28 reusable building blocks — validation, state transitions, clearing, posting, fulfillment, notification.',
+    desc: '28 business-rule units — validation, state transitions, clearing, posting, fulfillment, notification — composed of one-or-more activities.',
     to: '/docs/design/services',
+  },
+  {
+    icon: '⚡',
+    title: 'Temporal Activities',
+    desc: 'Reusable I/O units invoked by services with per-call options — clearing, AR, OTB, lifecycle writes, notifications.',
+    to: '/docs/build/principles/core-build/temporal-activities',
   },
   {
     icon: '🪢',
     title: 'Sequence Diagram',
-    desc: 'End-to-end sequence flows: One-Data function → Core API → Router → Workflows → Services.',
+    desc: 'End-to-end sequence flows: One-Data function → Core API → Router → Workflows → Services → Activities.',
     to: '/docs/design/diagrams/sequence-diagram',
   },
 ];

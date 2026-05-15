@@ -20,7 +20,8 @@ This site captures every moving part of that journey:
 | **Billpay Core APIs** | REST endpoints exposed by Billpay-core (`POST /payments`, …) | [Billpay APIs](build/api-spec/billpay-core.md) |
 | **Billpay Router** | Lightweight routing layer that picks the right workflow | [Architecture › Components](architecture/components.md) |
 | **Temporal Workflows** | Long-running, durable orchestrations (realtime + batch) | [Workflows › Core](design/workflows/core.md) |
-| **Payment Services** | Re-usable activities that change state, call externals, notify | [Payment Services](design/services.md) |
+| **Payment Services** | Business-rule units that compose activities; the place where market / account variance lives | [Payment Services](design/services.md) |
+| **Temporal Activities** | The reusable I/O units invoked by services — calls to clearing, AR, OTB, DB writes, notifications | [Build › Core Build › Activities](build/principles/core-build/temporal-activities.md) |
 | **Event Handlers** | Async consumers of money-movement / posted / OTB events | [Event Handlers](design/workflows/event-handlers.md) |
 | **Schedules** | Temporal Schedules that drive cron-style batch executors | [Scheduled Workflows](design/workflows/scheduled.md) |
 
