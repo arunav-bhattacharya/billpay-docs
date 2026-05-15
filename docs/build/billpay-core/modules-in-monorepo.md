@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Modules in Monorepo
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

@@ -5,7 +5,7 @@ sidebar_position: 2
 
 # One-data
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

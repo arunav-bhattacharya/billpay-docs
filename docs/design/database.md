@@ -5,7 +5,7 @@ sidebar_position: 6
 
 # Database
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

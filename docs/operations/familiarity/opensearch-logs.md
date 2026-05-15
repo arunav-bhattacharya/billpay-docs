@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Opensearch Logs
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

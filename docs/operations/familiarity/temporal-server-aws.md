@@ -5,7 +5,7 @@ sidebar_position: 5
 
 # Temporal Server on AWS
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

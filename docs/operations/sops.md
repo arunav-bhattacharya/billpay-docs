@@ -5,7 +5,7 @@ sidebar_position: 2
 
 # Standard Operating Procedures
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

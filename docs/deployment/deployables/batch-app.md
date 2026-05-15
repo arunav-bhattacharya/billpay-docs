@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Batch app (Batch Temporal Workers)
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # One-data functions (API Gateway)
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

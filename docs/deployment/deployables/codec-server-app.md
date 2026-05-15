@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # Codec Server app
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

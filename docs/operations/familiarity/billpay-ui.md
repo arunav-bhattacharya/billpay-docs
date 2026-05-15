@@ -5,7 +5,7 @@ sidebar_position: 2
 
 # Billpay UI
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Service Interfaces
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

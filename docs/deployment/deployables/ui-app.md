@@ -5,7 +5,7 @@ sidebar_position: 5
 
 # UI app
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # Choice of ORM — Exposed
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

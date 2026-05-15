@@ -5,7 +5,7 @@ sidebar_position: 7
 
 # Oracle DB — `#oracle-dbo-support`
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

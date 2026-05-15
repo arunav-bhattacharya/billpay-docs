@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Choice of DataSource — AgroalDataSource
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

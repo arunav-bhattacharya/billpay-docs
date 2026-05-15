@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Choice of HTTPClient — OkHttpClient
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

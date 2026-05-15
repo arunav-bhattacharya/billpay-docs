@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Replay Testing (Temporal)
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 

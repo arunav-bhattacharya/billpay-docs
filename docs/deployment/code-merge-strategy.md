@@ -5,7 +5,7 @@ sidebar_position: 2
 
 # Code Merge / PR Strategy
 
-:::note Placeholder
+:::note[Placeholder]
 This page is a placeholder. Content coming soon.
 :::
 
