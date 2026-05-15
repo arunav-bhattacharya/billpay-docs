@@ -118,8 +118,11 @@ erDiagram
   trans_dtl ||--o{ trans_lfcyc_event : "audit log"
   trans_dtl ||--o{ split_trans_dtl   : "splits"
   split_trans_dtl ||--o{ split_trans_lfcyc_event : "split audit"
-  trans_dtl ||--o| ORIG_TRANS_REFER_MAP : "replacement map"
+  trans_dtl ||--o| orig_trans_refer_map : "replacement map"
   idempotency_checker ||--o| trans_dtl  : "first-write wins"
-  External_Transaction_Events_Tracker ||--o| trans_dtl : "closes to PAID"
+  external_trans_events_tracker ||--o| trans_dtl : "closes to PAID"
   notification_tracker ||--o{ trans_dtl : "outbound notifications"
+  card_acct ||--o{ trans_dtl : "account cache"
+  trans_exec_queue ||--o{ trans_dtl : "schedules execution"
+  trans_exec_queue ||--|| trans_exec_context : "carries"
 ```
