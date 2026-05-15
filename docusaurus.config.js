@@ -112,6 +112,9 @@ const config = {
             boxTextMargin: 6,
             noteMargin: 12,
             messageMargin: 40,
+            useMaxWidth: false,
+            actorMargin: 50,
+            width: 400,
           },
           state: {
             useMaxWidth: true,
