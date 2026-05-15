@@ -49,14 +49,6 @@ html { scroll-behavior: smooth; }
   display: flex;
   justify-content: center;
   padding: 16px 0;
-  overflow-x: auto;
-}
-
-/* Sequence diagrams may be wider than the article column — let them render
-   at their natural width and scroll horizontally inside the container. */
-.docusaurus-mermaid-container svg[aria-roledescription='sequence'] {
-  max-width: none !important;
-  flex-shrink: 0;
 }
 
 /* Mermaid diagrams render text as SVG <text> elements — force JetBrains Mono

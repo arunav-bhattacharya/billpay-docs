@@ -23,7 +23,7 @@ Inside the body:
 - **Amber-tinted rectangles** mark async work that happens *after* the client has been responded to.
 - **Fuchsia/pink-tinted rectangles** pop out **state transitions** — moments where the payment moves from one lifecycle state to another (`PENDING → ACCEPTED`, `PROCESSING → PROCESSED`, etc.).
 
-Each Payment Service appears as its **own participant** (e.g., `NewPaymentIdempotencyService`, `PaymentExecutionService`) rather than as a generic "Payment Services" bucket. External systems and infrastructure (clearing, AR, OTB, accounting, database, event bus) are intentionally omitted — they're internal implementation details of the services that own them.
+Each Payment Service appears as its **own participant**. To keep diagrams readable, the participant label drops the redundant `Payment` prefix and `Service` suffix — e.g., `Execution` represents `PaymentExecutionService`, `New Idempotency` represents `NewPaymentIdempotencyService`. External systems and infrastructure (clearing, AR, OTB, accounting, database, event bus) are intentionally omitted — they're internal implementation details of the services that own them.
 
 ## 1. Immediate payment — single instruction
 
@@ -43,10 +43,10 @@ sequenceDiagram
     participant API as POST /payments
     participant R as Billpay Router
     participant WF as Create Immediate Payment WF
-    participant NPI as NewPaymentIdempotencyService
-    participant PVE as PaymentValidationOnExecuteService
-    participant PEX as PaymentExecutionService
-    participant PFL as PaymentFulfillmentService
+    participant NPI as New Idempotency
+    participant PVE as Validation (Execute)
+    participant PEX as Execution
+    participant PFL as Fulfillment
   end
 
   C->>ODF: CreatePayment.v3 (date=today, single)
@@ -101,14 +101,14 @@ sequenceDiagram
     participant API as POST /payments
     participant R as Billpay Router
     participant CSP as Create Schedule Payment WF
-    participant NPI as NewPaymentIdempotencyService
-    participant PVS as PaymentValidationOnSchedulingService
-    participant PSN as PaymentScheduledNotificationService
+    participant NPI as New Idempotency
+    participant PVS as Validation (Schedule)
+    participant PSN as Scheduled Notify
     participant SCH as Scheduled Payment Executor
     participant ESP as Execute Scheduled Payment WF
-    participant PVX as PaymentValidationOnExecutionService
-    participant PEX as PaymentExecutionService
-    participant PFL as PaymentFulfillmentService
+    participant PVX as Validation (Execution)
+    participant PEX as Execution
+    participant PFL as Fulfillment
   end
 
   C->>API: POST /payments (date=future)
@@ -169,16 +169,16 @@ sequenceDiagram
     participant API as POST /payments
     participant R as Billpay Router
     participant P as Parent Workflow
-    participant NPI as NewPaymentIdempotencyService
-    participant PVE as PaymentValidationOnExecuteService
-    participant PVS as PaymentValidationOnSchedulingService
+    participant NPI as New Idempotency
+    participant PVE as Validation (Execute)
+    participant PVS as Validation (Schedule)
     participant GPA as Get Corporate Payment Allocations WF
-    participant ARQ as AllocationsRequestService
-    participant ARC as AllocationsReceivedService
-    participant PSC as PaymentSplitsCreationService
+    participant ARQ as Allocations Request
+    participant ARC as Allocations Received
+    participant PSC as Splits Creation
     participant ESP as Execute Split Payment WF
-    participant PEX as PaymentExecutionService
-    participant PFL as PaymentFulfillmentService
+    participant PEX as Execution
+    participant PFL as Fulfillment
   end
 
   C->>API: POST /payments (corporate)
@@ -253,12 +253,12 @@ sequenceDiagram
   box rgba(0,111,207,0.08) Billpay Platform
     participant API as PUT /payments/:id
     participant U as Update Payment WF
-    participant EPI as ExistingPaymentIdempotencyService
+    participant EPI as Existing Idempotency
     participant CAN as Cancel Payment WF
-    participant PCV as PaymentCancelValidationService
-    participant PCN as PaymentCancellationService
+    participant PCV as Cancel Validation
+    participant PCN as Cancellation
     participant CSP as Create Schedule Payment WF
-    participant MAP as MapNewPaymentIdToPreviousIdService
+    participant MAP as Map ID Old → New
   end
 
   C->>API: PUT /payments/:id
@@ -308,9 +308,9 @@ sequenceDiagram
   box rgba(0,111,207,0.08) Billpay Platform
     participant API as DELETE /payments/:id
     participant CWF as Cancel Payment WF
-    participant EPI as ExistingPaymentIdempotencyService
-    participant PCV as PaymentCancelValidationService
-    participant PCN as PaymentCancellationService
+    participant EPI as Existing Idempotency
+    participant PCV as Cancel Validation
+    participant PCN as Cancellation
   end
 
   C->>API: DELETE /payments/:id
@@ -344,14 +344,14 @@ sequenceDiagram
     participant MMH as Money Movement Event Handler
     participant API as POST /payments/returns
     participant PR as Process Returned Payment WF
-    participant EPI as ExistingPaymentIdempotencyService
-    participant PRV as PaymentReturnValidationService
-    participant PRX as PaymentReturnExecutionService
-    participant PRE as PaymentRepresentmentEligibilityService
-    participant PRC as PaymentRepresentmentCreationService
+    participant EPI as Existing Idempotency
+    participant PRV as Return Validation
+    participant PRX as Return Execution
+    participant PRE as Representment Elig.
+    participant PRC as Representment Create
     participant PRP as Process Representment WF
-    participant PRRV as PaymentRepresentmentValidationService
-    participant PRRX as PaymentRepresentmentExecutionService
+    participant PRRV as Representment Validate
+    participant PRRX as Representment Execute
   end
 
   Note over MMH: receives Money Movement (MR/M3) return event
@@ -404,12 +404,12 @@ sequenceDiagram
     participant UPH as Unstructured Payment Handler
     participant API as POST /payments/inbound
     participant IB as Process Inbound Payment WF
-    participant NPI as NewPaymentIdempotencyService
-    participant PVP as PaymentValidationOnPostingService
-    participant PPS as PaymentPostingService
-    participant PFL as PaymentFulfillmentService
-    participant PSC as PaymentSplitsCreationService
-    participant PRJ as PaymentRejectionService
+    participant NPI as New Idempotency
+    participant PVP as Validation (Posting)
+    participant PPS as Posting
+    participant PFL as Fulfillment
+    participant PSC as Splits Creation
+    participant PRJ as Rejection
   end
 
   Note over UPH: receives Batch Gateway payment event, enriches payload
