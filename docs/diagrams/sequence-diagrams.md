@@ -23,7 +23,7 @@ Inside the body:
 - **Amber-tinted rectangles** mark async work that happens *after* the client has been responded to.
 - **Fuchsia/pink-tinted rectangles** pop out **state transitions** — moments where the payment moves from one lifecycle state to another (`PENDING → ACCEPTED`, `PROCESSING → PROCESSED`, etc.).
 
-Each Payment Service appears as its **own participant**. To keep diagrams readable, the participant label drops the redundant `Payment` prefix and `Service` suffix — e.g., `Execution` represents `PaymentExecutionService`, `New Idempotency` represents `NewPaymentIdempotencyService`. External systems and infrastructure (clearing, AR, OTB, accounting, database, event bus) are intentionally omitted — they're internal implementation details of the services that own them.
+Each Payment Service appears as its **own participant**. To keep diagrams readable, the participant label drops the redundant `Payment` prefix and `Service` suffix — e.g., `Execution` represents `PaymentExecutionService`, `Idempotency Check` covers both `NewPaymentIdempotencyService` and `ExistingPaymentIdempotencyService`. External systems and infrastructure (clearing, AR, OTB, accounting, database, event bus) are intentionally omitted — they're internal implementation details of the services that own them.
 
 ## 1. Immediate payment — single instruction
 
@@ -43,7 +43,7 @@ sequenceDiagram
     participant API as POST /payments
     participant R as Billpay Router
     participant WF as Create Immediate Payment WF
-    participant NPI as New Idempotency
+    participant IDEMP as Idempotency Check
     participant PVE as Validation (Execute)
     participant PEX as Execution
     participant PFL as Fulfillment
@@ -56,9 +56,9 @@ sequenceDiagram
 
   rect rgba(0,111,207,0.15)
     Note over WF,PVE: Realtime Worker · #CreateImmediatePaymentWF — validates and accepts inline
-    WF->>NPI: check idempotency
+    WF->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
-      NPI-->>WF: state → PENDING
+      IDEMP-->>WF: state → PENDING
     end
     WF->>PVE: validate
     rect rgba(217,70,239,0.22)
@@ -101,7 +101,7 @@ sequenceDiagram
     participant API as POST /payments
     participant R as Billpay Router
     participant CSP as Create Schedule Payment WF
-    participant NPI as New Idempotency
+    participant IDEMP as Idempotency Check
     participant PVS as Validation (Schedule)
     participant PSN as Scheduled Notify
     participant SCH as Scheduled Payment Executor
@@ -117,9 +117,9 @@ sequenceDiagram
 
   rect rgba(0,111,207,0.15)
     Note over CSP,PSN: Realtime Worker · #CreateSchedulePaymentWF — validates the schedule, returns SCHEDULED
-    CSP->>NPI: check idempotency
+    CSP->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
-      NPI-->>CSP: state → PENDING
+      IDEMP-->>CSP: state → PENDING
     end
     CSP->>PVS: validate schedule
     rect rgba(217,70,239,0.22)
@@ -169,7 +169,7 @@ sequenceDiagram
     participant API as POST /payments
     participant R as Billpay Router
     participant P as Parent Workflow
-    participant NPI as New Idempotency
+    participant IDEMP as Idempotency Check
     participant PVE as Validation (Execute)
     participant PVS as Validation (Schedule)
     participant GPA as Get Corporate Payment Allocations WF
@@ -187,9 +187,9 @@ sequenceDiagram
 
   rect rgba(0,111,207,0.15)
     Note over P,PVS: Realtime Worker · parent is either #CreateImmediatePaymentWF or #CreateSchedulePaymentWF
-    P->>NPI: check idempotency
+    P->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
-      NPI-->>P: state → PENDING
+      IDEMP-->>P: state → PENDING
     end
     alt parent is CreateImmediatePaymentWF
       P->>PVE: validate
@@ -253,7 +253,7 @@ sequenceDiagram
   box rgba(0,111,207,0.08) Billpay Platform
     participant API as PUT /payments/:id
     participant U as Update Payment WF
-    participant EPI as Existing Idempotency
+    participant IDEMP as Idempotency Check
     participant CAN as Cancel Payment WF
     participant PCV as Cancel Validation
     participant PCN as Cancellation
@@ -266,9 +266,9 @@ sequenceDiagram
 
   rect rgba(0,111,207,0.15)
     Note over U,MAP: Realtime Worker · #UpdatePaymentWF — cancels the original, creates a replacement, maps old → new
-    U->>EPI: check existing idempotency
+    U->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
-      EPI-->>U: state → PENDING
+      IDEMP-->>U: state → PENDING
     end
 
     rect rgba(0,111,207,0.18)
@@ -308,7 +308,7 @@ sequenceDiagram
   box rgba(0,111,207,0.08) Billpay Platform
     participant API as DELETE /payments/:id
     participant CWF as Cancel Payment WF
-    participant EPI as Existing Idempotency
+    participant IDEMP as Idempotency Check
     participant PCV as Cancel Validation
     participant PCN as Cancellation
   end
@@ -318,7 +318,7 @@ sequenceDiagram
 
   rect rgba(0,111,207,0.15)
     Note over CWF,PCN: Realtime Worker · #CancelPaymentWF — checks eligibility and transitions to CANCELLED
-    CWF->>EPI: check existing idempotency
+    CWF->>IDEMP: check idempotency
     CWF->>PCV: validate cancel
     alt eligible
       CWF->>PCN: cancel
@@ -344,7 +344,7 @@ sequenceDiagram
     participant MMH as Money Movement Event Handler
     participant API as POST /payments/returns
     participant PR as Process Returned Payment WF
-    participant EPI as Existing Idempotency
+    participant IDEMP as Idempotency Check
     participant PRV as Return Validation
     participant PRX as Return Execution
     participant PRE as Representment Elig.
@@ -360,7 +360,7 @@ sequenceDiagram
 
   rect rgba(0,111,207,0.15)
     Note over PR,PRC: Batch Worker · #ProcessReturnedPaymentWF — triggered by Money Movement return events
-    PR->>EPI: check existing idempotency
+    PR->>IDEMP: check idempotency
     PR->>PRV: validate return
     alt valid return
       PR->>PRX: execute return
@@ -404,7 +404,7 @@ sequenceDiagram
     participant UPH as Unstructured Payment Handler
     participant API as POST /payments/inbound
     participant IB as Process Inbound Payment WF
-    participant NPI as New Idempotency
+    participant IDEMP as Idempotency Check
     participant PVP as Validation (Posting)
     participant PPS as Posting
     participant PFL as Fulfillment
@@ -418,9 +418,9 @@ sequenceDiagram
 
   rect rgba(0,111,207,0.15)
     Note over IB,PRJ: Batch Worker · #ProcessInboundPaymentWF — posts an upstream-originated payment into Billpay
-    IB->>NPI: check idempotency
+    IB->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
-      NPI-->>IB: state → PENDING
+      IDEMP-->>IB: state → PENDING
     end
     IB->>PVP: validate posting
     alt accepted (Full)
