@@ -55,7 +55,7 @@ sequenceDiagram
   R->>WF: invoke(workflow-key)
 
   rect rgba(0,111,207,0.15)
-    Note over WF,PVAL: Realtime Worker · #CreateImmediatePaymentWF — validates and accepts inline
+    Note over WF,PVAL: Realtime Worker CreateImmediatePaymentWF — validates and accepts inline
     WF->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>WF: state → PENDING
@@ -72,7 +72,7 @@ sequenceDiagram
   ODF-->>C: payment-id, status=ACCEPTED
 
   rect rgba(245,158,11,0.18)
-    Note over WF,PFL: Async fulfillment — execution and fulfillment run after the client response
+    Note over WF,PFL: Realtime Worker CreateImmediatePaymentWF — async execution and fulfillment continue after the client response
     WF->>PEX: execute
     rect rgba(217,70,239,0.22)
       PEX-->>WF: state → PROCESSING
@@ -116,7 +116,7 @@ sequenceDiagram
   R->>CSP: invoke(workflow-key)
 
   rect rgba(0,111,207,0.15)
-    Note over CSP,PSN: Realtime Worker · #CreateSchedulePaymentWF — validates the schedule, returns SCHEDULED
+    Note over CSP,PSN: Realtime Worker CreateSchedulePaymentWF — validates the schedule, returns SCHEDULED
     CSP->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>CSP: state → PENDING
@@ -134,7 +134,7 @@ sequenceDiagram
   Note over SCH,ESP: On payment date · Scheduled Payment Executor fires (waves of 2,500 / minute)
 
   rect rgba(245,158,11,0.18)
-    Note over SCH,PFL: Batch Worker · #ExecuteScheduledPaymentWF — re-validates, executes and fulfills
+    Note over SCH,PFL: Batch Worker ExecuteScheduledPaymentWF — re-validates, executes and fulfills
     SCH->>ESP: pick up SCHEDULED payments (batches of 2,500/min)
     ESP->>PVX: validate
     rect rgba(217,70,239,0.22)
@@ -190,7 +190,7 @@ sequenceDiagram
   R->>CIP: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over CIP,PVAL: Realtime Worker · #CreateImmediatePaymentWF — validates and accepts inline
+    Note over CIP,PVAL: Realtime Worker CreateImmediatePaymentWF — validates and accepts inline
     CIP->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>CIP: state → PENDING
@@ -209,7 +209,7 @@ sequenceDiagram
     Note over CIP,PFL: Async — corporate allocations are fetched, then per-split execution runs in waves
 
     rect rgba(0,111,207,0.15)
-      Note over GPA,PSC: Batch Worker · #GetCorporatePaymentAllocationsWF — fetches the split breakdown
+      Note over GPA,PSC: Batch Worker GetCorporatePaymentAllocationsWF — fetches the split breakdown
       CIP->>GPA: trigger allocations workflow
       GPA->>ARQ: request allocations
       rect rgba(217,70,239,0.22)
@@ -223,7 +223,7 @@ sequenceDiagram
     end
 
     rect rgba(0,111,207,0.15)
-      Note over ESP,PFL: Batch Worker · #ExecuteSplitPaymentWF — drained by the Corporate Allocations Processor Schedule
+      Note over ESP,PFL: Batch Worker ExecuteSplitPaymentWF — drained by the Corporate Allocations Processor Schedule
       GPA->>ESP: trigger split execution
       ESP->>PEX: execute split
       rect rgba(217,70,239,0.22)
@@ -276,7 +276,7 @@ sequenceDiagram
   R->>CSP: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over CSP,PVS: Realtime Worker · #CreateSchedulePaymentWF — validates the schedule, returns SCHEDULED
+    Note over CSP,PVS: Realtime Worker CreateSchedulePaymentWF — validates the schedule, returns SCHEDULED
     CSP->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>CSP: state → PENDING
@@ -294,7 +294,7 @@ sequenceDiagram
     Note over CSP,PSC: Async (today) — corporate allocations fetched up front so they're ready on payment date
 
     rect rgba(0,111,207,0.15)
-      Note over GPA,PSC: Batch Worker · #GetCorporatePaymentAllocationsWF — fetches the split breakdown
+      Note over GPA,PSC: Batch Worker GetCorporatePaymentAllocationsWF — fetches the split breakdown
       CSP->>GPA: trigger allocations workflow
       GPA->>ARQ: request allocations
       rect rgba(217,70,239,0.22)
@@ -314,7 +314,7 @@ sequenceDiagram
     Note over SCH,PFL: Batch chain — re-validate, then execute and fulfill each split
 
     rect rgba(0,111,207,0.15)
-      Note over SCH,PVX: Batch Worker · #ExecuteScheduledPaymentWF — re-validates and accepts inline
+      Note over SCH,PVX: Batch Worker ExecuteScheduledPaymentWF — re-validates and accepts inline
       SCH->>ESPS: pick up ALLOCATIONS_RECEIVED payments
       ESPS->>PVX: validate
       rect rgba(217,70,239,0.22)
@@ -323,7 +323,7 @@ sequenceDiagram
     end
 
     rect rgba(0,111,207,0.15)
-      Note over ESP,PFL: Batch Worker · #ExecuteSplitPaymentWF — drained by the Corporate Allocations Processor Schedule
+      Note over ESP,PFL: Batch Worker ExecuteSplitPaymentWF — drained by the Corporate Allocations Processor Schedule
       ESPS->>ESP: trigger split execution
       ESP->>PEX: execute split
       rect rgba(217,70,239,0.22)
@@ -362,7 +362,7 @@ sequenceDiagram
   API->>U: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over U,MAP: Realtime Worker · #UpdatePaymentWF — cancels the original, creates a replacement, maps old → new
+    Note over U,MAP: Realtime Worker UpdatePaymentWF — cancels the original, creates a replacement, maps old → new
     U->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>U: state → PENDING
@@ -414,7 +414,7 @@ sequenceDiagram
   API->>CWF: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over CWF,PCN: Realtime Worker · #CancelPaymentWF — checks eligibility and transitions to CANCELLED
+    Note over CWF,PCN: Realtime Worker CancelPaymentWF — checks eligibility and transitions to CANCELLED
     CWF->>IDEMP: check idempotency
     CWF->>PCV: validate cancel
     alt eligible
@@ -456,7 +456,7 @@ sequenceDiagram
   API->>PR: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over PR,PRC: Batch Worker · #ProcessReturnedPaymentWF — triggered by Money Movement return events
+    Note over PR,PRC: Batch Worker ProcessReturnedPaymentWF — triggered by Money Movement return events
     PR->>IDEMP: check idempotency
     PR->>PRV: validate return
     alt valid return
@@ -473,7 +473,7 @@ sequenceDiagram
         PR->>PRP: hand off
 
         rect rgba(0,111,207,0.18)
-          Note over PRP,PRRX: Batch Worker · #ProcessRepresentmentWF — re-clears a returned transaction on the representment day
+          Note over PRP,PRRX: Batch Worker ProcessRepresentmentWF — re-clears a returned transaction on the representment day
           PRP->>PRRV: validate representment
           alt valid representment
             PRP->>PRRX: execute representment
@@ -514,7 +514,7 @@ sequenceDiagram
   API->>IB: invoke
 
   rect rgba(0,111,207,0.15)
-    Note over IB,PRJ: Batch Worker · #ProcessInboundPaymentWF — posts an upstream-originated payment into Billpay
+    Note over IB,PRJ: Batch Worker ProcessInboundPaymentWF — posts an upstream-originated payment into Billpay
     IB->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>IB: state → PENDING
@@ -563,7 +563,7 @@ sequenceDiagram
   end
 
   rect rgba(0,111,207,0.15)
-    Note over SCH,PEP: Batch Worker · #PaidEventsProcessingWF — closes the payment to PAID once both events have arrived
+    Note over SCH,PEP: Batch Worker PaidEventsProcessingWF — closes the payment to PAID once both events have arrived
     SCH->>PEP: tick (continuous batch)
     PEP->>TRK: find pairs (AR-Posted + Settled)
     PEP->>TRK: mark Picked-up-for-processing
@@ -586,7 +586,7 @@ sequenceDiagram
   end
 
   rect rgba(0,111,207,0.15)
-    Note over SCH,TRK: Batch Worker · #MissingPaidEventsProcessingWF — hourly probe for AR-Posted or Settled events missing &gt; 48h
+    Note over SCH,TRK: Batch Worker MissingPaidEventsProcessingWF — hourly probe for AR-Posted or Settled events missing over 48h
     SCH->>MPE: tick (hourly / configurable)
     MPE->>TRK: find payments missing AR-Posted or Settled > 48h
   end
@@ -631,7 +631,7 @@ sequenceDiagram
   API->>CWF: invoke composite
 
   rect rgba(0,111,207,0.15)
-    Note over CWF,CIP: Realtime Worker · #CreatePaymentInstallmentWF — composite that chains payment + installment plan + optional autopay
+    Note over CWF,CIP: Realtime Worker CreatePaymentInstallmentWF — composite that chains payment + installment plan + optional autopay
 
     rect rgba(0,111,207,0.18)
       CWF->>CIP: invoke CreateImmediatePaymentWF
