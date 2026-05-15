@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["http-server", "/tmp/bp-serve", "-p", "3003", "-s", "--cors", "-c-1"],
       "port": 3003
+    },
+    {
+      "name": "docs-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--", "--no-open", "--port", "3001"],
+      "port": 3001
     }
   ]
 }

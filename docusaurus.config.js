@@ -1,5 +1,5 @@
 // @ts-check
-// Docusaurus config — Billpay Platform Docs
+// Docusaurus config — Billpay Atlas
 // Replace the GH_USER placeholder before deploying to GitHub Pages.
 
 import {themes as prismThemes} from 'prism-react-renderer';
@@ -9,7 +9,7 @@ const REPO_NAME = 'billpay-docs';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Billpay Platform',
+  title: 'Billpay Atlas',
   tagline: 'APIs, Workflows & State Machines that power payments',
   favicon: 'img/favicon.ico',
 
@@ -64,6 +64,8 @@ const config = {
           sidebarPath: './sidebars.js',
           routeBasePath: 'docs',
           editUrl: `https://github.com/${GH_USER}/${REPO_NAME}/edit/main/`,
+          showLastUpdateAuthor: true,
+          showLastUpdateTime: true,
         },
         blog: false,
         theme: {
@@ -128,7 +130,7 @@ const config = {
         },
       },
       navbar: {
-        title: 'Billpay Platform',
+        title: 'Billpay Atlas',
         logo: {
           alt: 'Billpay',
           src: 'img/logo.svg',
@@ -141,17 +143,22 @@ const config = {
             label: 'Docs',
           },
           {
+            to: '/docs/vision',
+            label: 'Vision',
+            position: 'left',
+          },
+          {
             to: '/docs/architecture/overview',
             label: 'Architecture',
             position: 'left',
           },
           {
-            to: '/docs/diagrams/state-diagrams',
+            to: '/docs/design/diagrams/state-diagram',
             label: 'State Diagrams',
             position: 'left',
           },
           {
-            to: '/docs/diagrams/sequence-diagrams',
+            to: '/docs/design/diagrams/sequence-diagram',
             label: 'Sequence Diagrams',
             position: 'left',
           },
@@ -168,31 +175,37 @@ const config = {
           {
             title: 'Docs',
             items: [
+              {label: 'Vision', to: '/docs/vision'},
               {label: 'Architecture Overview', to: '/docs/architecture/overview'},
-              {label: 'APIs', to: '/docs/apis/billpay-apis'},
-              {label: 'SLA · SLI · SLO', to: '/docs/apis/sla-sli-slo'},
-              {label: '— One-Data Functions', to: '/docs/apis/sla-sli-slo/one-data-functions'},
-              {label: '— Billpay Core APIs', to: '/docs/apis/sla-sli-slo/billpay-apis'},
-              {label: 'Workflows', to: '/docs/workflows/core'},
-              {label: 'Payment Services', to: '/docs/services/payment-services'},
+              {label: 'APIs', to: '/docs/build/api-spec/billpay-core'},
+              {label: 'Workflows', to: '/docs/design/workflows/core'},
+              {label: 'Payment Services', to: '/docs/design/services'},
             ],
           },
           {
             title: 'Diagrams',
             items: [
-              {label: 'State Diagrams', to: '/docs/diagrams/state-diagrams'},
-              {label: 'Sequence Diagrams', to: '/docs/diagrams/sequence-diagrams'},
+              {label: 'State Diagram', to: '/docs/design/diagrams/state-diagram'},
+              {label: 'Sequence Diagram', to: '/docs/design/diagrams/sequence-diagram'},
             ],
           },
           {
-            title: 'Operate',
+            title: 'Observability',
             items: [
-              {label: 'Run Locally', to: '/docs/operate/run-locally'},
-              {label: 'Publish to GitHub Pages', to: '/docs/operate/publish'},
+              {label: 'SLA · SLI · SLO', to: '/docs/observability/monitoring/sla-sli-slo'},
+              {label: '— One-Data Functions', to: '/docs/observability/monitoring/sla-sli-slo/one-data-functions'},
+              {label: '— Billpay Core APIs', to: '/docs/observability/monitoring/sla-sli-slo/billpay-apis'},
+            ],
+          },
+          {
+            title: 'Contributing',
+            items: [
+              {label: 'Run Locally', to: '/docs/contributing/run-locally'},
+              {label: 'Publish to GitHub Pages', to: '/docs/contributing/publish'},
             ],
           },
         ],
-        copyright: `Billpay Platform Documentation — © ${new Date().getFullYear()}`,
+        copyright: `Billpay Atlas — © ${new Date().getFullYear()}`,
       },
       prism: {
         theme: prismThemes.github,

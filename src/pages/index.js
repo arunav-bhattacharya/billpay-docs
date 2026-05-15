@@ -6,7 +6,7 @@ function Hero() {
   return (
     <header className="bp-hero">
       <div className="bp-hero__inner container">
-        <h1>Billpay Platform Documentation</h1>
+        <h1>Billpay Atlas</h1>
         <p>
           A reference for the APIs, Temporal workflows, scheduled jobs and state
           machines that move money through Billpay — designed for engineers
@@ -19,7 +19,7 @@ function Hero() {
           <Link className="bp-hero__btn bp-hero__btn--ghost" to="/docs/architecture/overview">
             Architecture Overview
           </Link>
-          <Link className="bp-hero__btn bp-hero__btn--ghost" to="/docs/diagrams/state-diagrams">
+          <Link className="bp-hero__btn bp-hero__btn--ghost" to="/docs/design/diagrams/state-diagram">
             State Diagrams
           </Link>
         </div>
@@ -50,7 +50,7 @@ function Stats() {
 export default function Home() {
   return (
     <Layout
-      title="Billpay Platform"
+      title="Billpay Atlas"
       description="APIs, Workflows and State Machines that power the Billpay platform.">
       <Hero />
       <Stats />

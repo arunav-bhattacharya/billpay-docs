@@ -199,7 +199,7 @@ The **reusable** building blocks. A service does exactly one job: validate,
 transition state, call clearing, fulfill, notify, etc. Services are designed
 to be composed across workflows, with **variations** chosen per source,
 account-type or market. See the
-[Payment Services reference](../services/payment-services.md) for the full list.
+[Payment Services reference](../design/services.md) for the full list.
 
 ### 6. Event Handlers
 Event-driven One-Data functions that bridge external systems back into
@@ -224,4 +224,4 @@ Three tables back every payment:
 - **`notification_tracker`** — durable record of every external notification we owe.
 
 Move to [Components](components.md) for a deeper look at each block, or jump
-straight to the [State Model](state-model.md) to see how a payment evolves.
+straight to the [State Model](../design/payment-state-model.md) to see how a payment evolves.

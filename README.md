@@ -1,4 +1,4 @@
-# Billpay Platform Documentation
+# Billpay Atlas
 
 A Docusaurus-powered documentation site for the **Billpay platform** — APIs,
 Temporal workflows, payment services and state machines.
