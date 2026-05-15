@@ -37,7 +37,7 @@ For the state-machine view of every workflow on a single page, jump to
 **Steps**
 
 1. `Input → PENDING` via `NewPaymentIdempotencyService`
-2. `PENDING → ACCEPTED` *or* `DECLINED` via `PaymentValidationOnExecuteService` + `PaymentStateTransitionService`
+2. `PENDING → ACCEPTED` *or* `DECLINED` via `PaymentValidationService` + `PaymentStateTransitionService`
 3. **If `ACCEPTED` & Full payment:**
    - `ACCEPTED → PROCESSING` via `PaymentExecutionService` + `PaymentStateTransitionService`
    - `PROCESSING → PROCESSED` via `PaymentFulfillmentService` + `PaymentStateTransitionService`

@@ -33,7 +33,7 @@ stateDiagram-v2
 
 :::note[Service mapping]
 - **idempotency** → `NewPaymentIdempotencyService`
-- **validate** → `PaymentValidationOnExecuteService` + `PaymentStateTransitionService`
+- **validate** → `PaymentValidationService` + `PaymentStateTransitionService`
 - **execute (Full / Split)** → `PaymentExecutionService` *(Full)* or `PaymentClearingService` *(Split, full-level clearing)*
 - **fulfill** → `PaymentFulfillmentService`
 - **create splits (Consumer)** → `PaymentSplitsCreationService`

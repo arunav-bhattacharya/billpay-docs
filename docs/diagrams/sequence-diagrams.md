@@ -44,7 +44,7 @@ sequenceDiagram
     participant R as Billpay Router
     participant WF as Create Immediate Payment WF
     participant IDEMP as Idempotency Check
-    participant PVE as Validation (Execute)
+    participant PVAL as Validation
     participant PEX as Execution
     participant PFL as Fulfillment
   end
@@ -55,14 +55,14 @@ sequenceDiagram
   R->>WF: invoke(workflow-key)
 
   rect rgba(0,111,207,0.15)
-    Note over WF,PVE: Realtime Worker · #CreateImmediatePaymentWF — validates and accepts inline
+    Note over WF,PVAL: Realtime Worker · #CreateImmediatePaymentWF — validates and accepts inline
     WF->>IDEMP: check idempotency
     rect rgba(217,70,239,0.22)
       IDEMP-->>WF: state → PENDING
     end
-    WF->>PVE: validate
+    WF->>PVAL: validate
     rect rgba(217,70,239,0.22)
-      PVE-->>WF: state → ACCEPTED
+      PVAL-->>WF: state → ACCEPTED
     end
   end
 
@@ -170,7 +170,7 @@ sequenceDiagram
     participant R as Billpay Router
     participant P as Parent Workflow
     participant IDEMP as Idempotency Check
-    participant PVE as Validation (Execute)
+    participant PVAL as Validation
     participant PVS as Validation (Schedule)
     participant GPA as Get Corporate Payment Allocations WF
     participant ARQ as Allocations Request
@@ -192,9 +192,9 @@ sequenceDiagram
       IDEMP-->>P: state → PENDING
     end
     alt parent is CreateImmediatePaymentWF
-      P->>PVE: validate
+      P->>PVAL: validate
       rect rgba(217,70,239,0.22)
-        PVE-->>P: state → ACCEPTED
+        PVAL-->>P: state → ACCEPTED
       end
     else parent is CreateSchedulePaymentWF
       P->>PVS: validate schedule
