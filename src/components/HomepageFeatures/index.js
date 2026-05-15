@@ -74,10 +74,22 @@ const FEATURES = [
     to: '/docs/build/principles/core-build/temporal-activities',
   },
   {
+    icon: '🚦',
+    title: 'Payment State Model',
+    desc: 'The canonical state machine every payment travels through — terminal vs non-terminal states and the transitions between them.',
+    to: '/docs/design/payment-state-model',
+  },
+  {
     icon: '🪢',
     title: 'Sequence Diagram',
     desc: 'End-to-end sequence flows: One-Data function → Core API → Router → Workflows → Services → Activities.',
     to: '/docs/design/diagrams/sequence-diagram',
+  },
+  {
+    icon: '🎯',
+    title: 'SLA · SLI · SLO',
+    desc: 'External commitments, internal objectives, and the indicators we measure them with — per One-Data function and per Core API.',
+    to: '/docs/observability/monitoring/sla-sli-slo',
   },
 ];
 
