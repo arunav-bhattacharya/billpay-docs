@@ -16,20 +16,20 @@ States are colour-coded by **lifecycle position only** — *non-terminal* (the p
 
 | State | Meaning | Terminal? |
 | --- | --- | --- |
-| <span className="bp-pill">PENDING</span> | Request accepted into Billpay; idempotency row written | No |
-| <span className="bp-pill">SCHEDULED</span> | Validated for a future-dated payment; waiting for the executor | No |
-| <span className="bp-pill">ALLOCATIONS_REQUESTED</span> | Corporate payment — GPA asked for allocation breakdown | No |
-| <span className="bp-pill">ALLOCATIONS_RECEIVED</span> | GPA returned allocations; ready to execute splits | No |
-| <span className="bp-pill">ACCEPTED</span> | Validated for execution today | No |
-| <span className="bp-pill">PROCESSING</span> | Sent to Clearing / Posting; awaiting fulfillment | No |
-| <span className="bp-pill">PROCESSED</span> | Internally fulfilled (Accounting / B&C / Comms notified) | No |
-| <span className="bp-pill">REPRESENTING</span> | Retry transaction created after a return | No |
-| <span className="bp-pill bp-pill--terminal">PAID</span> | AR posted **and** Clearing settled — closed out | **Yes** |
-| <span className="bp-pill bp-pill--terminal">RETURNED</span> | Money came back from clearing | **Yes** |
-| <span className="bp-pill bp-pill--terminal">REPRESENTED</span> | Representment cleared successfully | **Yes** |
-| <span className="bp-pill bp-pill--terminal">DECLINED</span> | Validation failed (either at scheduling or at execution) | **Yes** |
-| <span className="bp-pill bp-pill--terminal">CANCELLED</span> | Cancelled before reaching `PROCESSING` | **Yes** |
-| <span className="bp-pill bp-pill--terminal">REJECTED</span> | Inbound payment declined and rejected back | **Yes** |
+| <span className="bp-pill">PENDING</span> | The payment has been received and is awaiting initial processing. | No |
+| <span className="bp-pill">SCHEDULED</span> | The payment is set to execute at a future date. | No |
+| <span className="bp-pill">ALLOCATIONS_REQUESTED</span> | The payment is awaiting its allocation breakdown. | No |
+| <span className="bp-pill">ALLOCATIONS_RECEIVED</span> | The payment's allocation breakdown is available. | No |
+| <span className="bp-pill">ACCEPTED</span> | The payment is approved and ready to execute. | No |
+| <span className="bp-pill">PROCESSING</span> | The payment is currently being executed. | No |
+| <span className="bp-pill">PROCESSED</span> | The payment has been executed by Billpay; downstream confirmation is outstanding. | No |
+| <span className="bp-pill">REPRESENTING</span> | The payment is being re-attempted. | No |
+| <span className="bp-pill bp-pill--terminal">PAID</span> | The payment is fully settled. | **Yes** |
+| <span className="bp-pill bp-pill--terminal">RETURNED</span> | The payment did not settle; funds were returned. | **Yes** |
+| <span className="bp-pill bp-pill--terminal">REPRESENTED</span> | The re-attempted payment is fully settled. | **Yes** |
+| <span className="bp-pill bp-pill--terminal">DECLINED</span> | The payment was not approved for execution. | **Yes** |
+| <span className="bp-pill bp-pill--terminal">CANCELLED</span> | The payment was withdrawn before completion. | **Yes** |
+| <span className="bp-pill bp-pill--terminal">REJECTED</span> | The payment was not accepted into Billpay. | **Yes** |
 
 ## The big picture
 
