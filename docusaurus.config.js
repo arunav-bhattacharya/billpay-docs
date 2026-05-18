@@ -11,7 +11,7 @@ const REPO_NAME = 'billpay-docs';
 const config = {
   title: 'Billpay Wiki',
   tagline: 'APIs, Workflows & State Machines that power payments',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.svg',
 
   future: {
     v4: true,
