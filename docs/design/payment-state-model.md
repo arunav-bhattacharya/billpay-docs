@@ -21,7 +21,7 @@ States are colour-coded by **lifecycle position only** — *non-terminal* (the p
 | <span className="bp-pill">ALLOCATIONS_REQUESTED</span> | The payment is awaiting its allocation breakdown. | No |
 | <span className="bp-pill">ALLOCATIONS_RECEIVED</span> | The payment's allocation breakdown is available. | No |
 | <span className="bp-pill">ACCEPTED</span> | The payment is approved and ready to execute. | No |
-| <span className="bp-pill">PROCESSING</span> | The payment is currently being executed by notifying the respective systems to debit and credit accounts. | No |
+| <span className="bp-pill">PROCESSING</span> | The payment is currently being executed by notifying the respective systems to debit the funding account and credit the receiving account. | No |
 | <span className="bp-pill">PROCESSED</span> | The payment has been executed and fulfilled by Billpay by notifying all stakeholders. | No |
 | <span className="bp-pill">REPRESENTING</span> | A returned payment is scheduled to be re-attempted for settlement. | No |
 | <span className="bp-pill bp-pill--terminal">PAID</span> | The payment is settled and posted in accounts receivables. | **Yes** |
