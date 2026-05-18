@@ -91,7 +91,7 @@ Consulted on the way in, before a workflow accepts or schedules the payment.
 | **Payment-Options** | Returns the market-specific payment options available for the account |
 | **Customer 360** | Customer profile lookup — flags, eligibility, fraud signals |
 | **Account Verification Service (AVS)** | Verifies the funding account is real, owned, and in good standing |
-| **GPA (Allocations)** | For **corporate** payments — returns the split breakdown across underlying accounts |
+| **Allocations** | For **corporate** payments — returns the split breakdown across underlying accounts |
 
 ### Payment Execution
 
@@ -100,7 +100,7 @@ The legacy integrations the platform is actively modernising (see the [Product V
 | System | Purpose |
 | --- | --- |
 | **Clearing** | Transmits the payment for inter-bank settlement |
-| **Authorization / OTB** | Increases open-to-buy when a payment is accepted |
+| **Authorizations** | Increases open-to-buy when a payment is accepted |
 | **Accounts Receivable (GAR)** | Decrements the cardholder's balance |
 
 ### Fulfillment & notification
