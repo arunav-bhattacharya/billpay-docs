@@ -5,7 +5,7 @@ sidebar_position: 1
 slug: /intro
 ---
 
-# Welcome to Billpay Atlas
+# Welcome to Billpay Wiki
 
 Billpay is the platform that **orchestrates payment lifecycles** — from the moment
 a customer (or upstream system) initiates a payment, through validation,

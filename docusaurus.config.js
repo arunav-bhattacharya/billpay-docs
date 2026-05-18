@@ -1,5 +1,5 @@
 // @ts-check
-// Docusaurus config — Billpay Atlas
+// Docusaurus config — Billpay Wiki
 // Replace the GH_USER placeholder before deploying to GitHub Pages.
 
 import {themes as prismThemes} from 'prism-react-renderer';
@@ -9,7 +9,7 @@ const REPO_NAME = 'billpay-docs';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Billpay Atlas',
+  title: 'Billpay Wiki',
   tagline: 'APIs, Workflows & State Machines that power payments',
   favicon: 'img/favicon.ico',
 
@@ -130,7 +130,7 @@ const config = {
         },
       },
       navbar: {
-        title: 'Billpay Atlas',
+        title: 'Billpay Wiki',
         logo: {
           alt: 'Billpay',
           src: 'img/logo.svg',
@@ -185,7 +185,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Billpay Atlas — © ${new Date().getFullYear()}`,
+        copyright: `Billpay Wiki — © ${new Date().getFullYear()}`,
       },
       prism: {
         theme: prismThemes.github,
