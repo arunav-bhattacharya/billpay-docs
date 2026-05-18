@@ -5,23 +5,23 @@ sidebar_position: 2
 
 # Engineering Vision
 
-> Billpay is a **Temporal-orchestrated, configuration-driven platform**. The engineering challenge: make a system that's correct under failure, easy to evolve per market, and observable enough to operate at Amex scale.
+BillPay is a **Temporal-orchestrated, configuration-driven platform** focused on simplifying payment execution through consistent workflows across channels and markets. The engineering vision is to build resilient, scalable, and market-extensible orchestration that is fault-tolerant, self-healing, operationally observable, and easy to evolve as business and regulatory needs change.
 
-## Core principles
+## Core Engineering Principles
 
-1. **Workflows are the spine; services are the variance.** Each payment lifecycle (immediate / scheduled / recurring; pull / push) is a Temporal Workflow that encodes *what must happen and in what order*. Business-rule variance per market / account / origination source / payment method lives in **Service implementations** that the workflow calls as activities. New market = new service implementation, not a forked workflow.
-2. **Durability over cleverness.** Money movement cannot lose state. Temporal gives us replay-safe history, native retries / timers / signals / queries, and long-running flows as first-class. We don't build bespoke sagas or in-house cron.
-3. **One canonical state model.** All payments move through the same states (`PENDING`, `ACCEPTED`, `PROCESSED`, `PAID`, `RETURNED`, `CANCELLED`, …). The state model is the contract between platform and operators.
-4. **Contract-versioned entry points.** Public One-Data Functions (e.g. `CreatePayment.v3`) are versioned contracts. Internal refactors do not break channels.
-5. **Configuration over deployment.** Per-market parameters (cutoffs, hold windows, retry policies, fee rules) load at runtime. A regulatory change is a config push, not a release.
-6. **Realtime where the network allows; batch only where it doesn't.** Legacy balance / OTB / clearing integrations are pushed off cycle-bound batch onto event-driven realtime paths wherever the downstream supports it. Where batch is unavoidable, the boundary is isolated so it doesn't inflate end-to-end latency for the rest of the flow.
+- **Workflows drive orchestration; activities encapsulate market variation.** Each payment lifecycle — immediate, scheduled, recurring, pull, or push — is modeled as a Temporal Workflow defining the canonical execution path. Market, product, channel, and payment-method specific behavior is implemented through service activities, enabling extensibility without duplicating workflow logic.
+- **Resilient and durable by design.** Payment processing must remain reliable under failures and long-running execution scenarios. Temporal provides durable workflow state, replay-safe execution, retries, timers, signals, and recovery semantics as native platform capabilities.
+- **A single canonical payment lifecycle.** All payments progress through a standardized lifecycle model (for example: `PENDING`, `ACCEPTED`, `PROCESSED`, `PAID`, `RETURNED`, `CANCELLED`). This creates consistency across channels, operations, reporting, and downstream integrations.
+- **Stable, versioned platform contracts.** Platform entry points and APIs are contract-versioned to allow internal evolution without disrupting upstream channels or consumers.
+- **Configuration-driven market enablement.** Market-specific behavior — including cutoffs, retry policies, settlement windows, and regulatory rules — is externalized into runtime configuration, enabling faster adaptation without deployment-driven changes.
+- **Realtime and event-driven by default.** The platform prioritizes event-driven, near real-time processing wherever supported by downstream systems and payment rails. Batch-only integrations are isolated behind orchestration boundaries to prevent downstream latency models from impacting the broader payment lifecycle.
 
 ## How we run
 
 - **Realtime workers** drive immediate / API-triggered workflows.
 - **Batch workers** handle high-volume corporate file flows.
 - **Temporal Schedules** drive cron-style executors (settlement sweeps, retry sweeps, recurring-payment triggers).
-- **Event handlers** consume async signals (money-movement confirmations, posting events, OTB updates) and feed them back into the right workflow.
+- **Event handlers** abstracts away downstream domain-specific events and integration complexity, converting them into standardized payment signals that drive the appropriate workflow state transitions within BillPay.
 - **One-Data Functions** sit at the edge as the gateway to channels.
 
 ## What we optimize for
@@ -36,11 +36,11 @@ sidebar_position: 2
 
 ## What we're explicitly NOT building
 
-Mirroring the **out-of-scope** section of the [Product Vision](./product.md#out-of-scope) — engineering decisions should reinforce, not blur, these boundaries.
+Mirroring the **out-of-scope** section of the [Product Vision](./product.md#out-of-scope), engineering decisions should reinforce clear platform boundaries and ownership responsibilities.
 
-- **A general-purpose payments engine.** Billpay is for **credit-card bill payments**; every abstraction (state model, workflows, services) is tuned for that lifecycle. We resist generalising into adjacent flows (purchases, transfers, payouts).
-- **A homegrown workflow engine.** We use **Temporal** and stay close to its idioms — workflows, activities, signals, queries, schedules. We do not wrap it in a bespoke DSL or invent a parallel orchestrator.
-- **A new ledger or balance system of record.** We integrate with the **card account balance**, **Open-To-Buy** and **funding-source** systems that already own that truth. Billpay never stores the authoritative balance.
-- **A new clearing or settlement network.** We send instructions to existing clearing networks and consume their events; we do not move money ourselves.
-- **A new statement / billing generator.** Statement generation stays with the system that owns the cycle.
-- **A channel UI.** The standalone Billpay UI is for operators only — cardmember-facing surfaces (mobile, web, IVR) remain the property of the channel teams that integrate with our One-Data Functions.
+- **A general-purpose payments engine.** BillPay is focused on orchestrating customer bill payment lifecycles across Amex products and services. The platform is intentionally optimized for that domain rather than expanding into unrelated payment flows such as purchases, transfers, or payouts.
+- **A custom workflow orchestration framework.** BillPay adopts Temporal's native orchestration patterns — workflows, activities, signals, queries, and schedules — instead of building proprietary orchestration layers or custom workflow engines.
+- **A ledger or balance system of record.** BillPay integrates with enterprise systems that own account balances, Open-To-Buy, funding-source ledgers, and financial records. The platform orchestrates payment execution and lifecycle state, but does not own the authoritative financial source of truth.
+- **A clearing or settlement network.** BillPay coordinates with existing payment and settlement networks to initiate and track payment execution while those systems continue to own the movement and settlement of funds.
+- **A statementing or billing platform.** Billing cycles, statement generation, and customer account statementing remain within the systems that own those business capabilities.
+- **A customer-facing channel experience.** BillPay provides orchestration and operational capabilities, while customer-facing experiences — including mobile, web, voice-assisted servicing, and partner integrations — remain owned by the respective channel platforms integrating with BillPay services and APIs.
