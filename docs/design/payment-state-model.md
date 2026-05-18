@@ -21,15 +21,15 @@ States are colour-coded by **lifecycle position only** — *non-terminal* (the p
 | <span className="bp-pill">ALLOCATIONS_REQUESTED</span> | The payment is awaiting its allocation breakdown. | No |
 | <span className="bp-pill">ALLOCATIONS_RECEIVED</span> | The payment's allocation breakdown is available. | No |
 | <span className="bp-pill">ACCEPTED</span> | The payment is approved and ready to execute. | No |
-| <span className="bp-pill">PROCESSING</span> | The payment is currently being executed. | No |
-| <span className="bp-pill">PROCESSED</span> | The payment has been executed by Billpay; downstream confirmation is outstanding. | No |
-| <span className="bp-pill">REPRESENTING</span> | The payment is being re-attempted. | No |
-| <span className="bp-pill bp-pill--terminal">PAID</span> | The payment is fully settled. | **Yes** |
+| <span className="bp-pill">PROCESSING</span> | The payment is currently being executed by notifying the respective systems to debit and credit accounts. | No |
+| <span className="bp-pill">PROCESSED</span> | The payment has been executed and fulfilled by Billpay by notifying all stakeholders. | No |
+| <span className="bp-pill">REPRESENTING</span> | A returned payment is scheduled to be re-attempted for settlement. | No |
+| <span className="bp-pill bp-pill--terminal">PAID</span> | The payment is settled and posted in accounts receivables. | **Yes** |
 | <span className="bp-pill bp-pill--terminal">RETURNED</span> | The payment did not settle; funds were returned. | **Yes** |
-| <span className="bp-pill bp-pill--terminal">REPRESENTED</span> | The re-attempted payment is fully settled. | **Yes** |
+| <span className="bp-pill bp-pill--terminal">REPRESENTED</span> | A returned payment was re-attempted and successfully settled. | **Yes** |
 | <span className="bp-pill bp-pill--terminal">DECLINED</span> | The payment was not approved for execution. | **Yes** |
 | <span className="bp-pill bp-pill--terminal">CANCELLED</span> | The payment was withdrawn before completion. | **Yes** |
-| <span className="bp-pill bp-pill--terminal">REJECTED</span> | The payment was not accepted into Billpay. | **Yes** |
+| <span className="bp-pill bp-pill--terminal">REJECTED</span> | The payment was not accepted in American Express. | **Yes** |
 
 ## The big picture
 
