@@ -7,10 +7,7 @@ slug: /intro
 
 # Welcome to Billpay Wiki
 
-Billpay is the platform that **orchestrates payment lifecycles** — from the moment
-a customer (or upstream system) initiates a payment, through validation,
-clearing, posting and fulfillment, all the way to terminal states like `PAID`,
-`RETURNED` or `CANCELLED`.
+BillPay is **Amex's enterprise platform for executing and orchestrating customer bill payments** across products and services, primarily credit card payments. It manages the end-to-end payment lifecycle — including initiation, validation, money movement, posting, settlement, and downstream financial updates. The platform ensures reliable fund transfer from customer bank accounts while maintaining synchronized payment state and operational visibility across enterprise domains.
 
 This site captures every moving part of that journey:
 
