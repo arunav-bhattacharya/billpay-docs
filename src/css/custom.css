@@ -433,7 +433,10 @@ html { scroll-behavior: smooth; }
 [data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REPRESENTED"] .nodeLabel,
 [data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-PAID"] foreignObject span,
 [data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-RETURNED"] foreignObject span,
-[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REPRESENTED"] foreignObject span {
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REPRESENTED"] foreignObject span,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-PAID"] foreignObject p,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-RETURNED"] foreignObject p,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REPRESENTED"] foreignObject p {
   color: #065F46 !important;
 }
 [data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-PAID"] > rect.label-container,
@@ -447,7 +450,10 @@ html { scroll-behavior: smooth; }
 [data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REPRESENTED"] .nodeLabel,
 [data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-PAID"] foreignObject span,
 [data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-RETURNED"] foreignObject span,
-[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REPRESENTED"] foreignObject span {
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REPRESENTED"] foreignObject span,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-PAID"] foreignObject p,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-RETURNED"] foreignObject p,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REPRESENTED"] foreignObject p {
   color: #A7F3D0 !important;
 }
 
@@ -458,12 +464,15 @@ html { scroll-behavior: smooth; }
   fill: #FFF1F2 !important;
   stroke: #E11D48 !important;
 }
-[data-theme='light'] .docusaurus-mermaid-container svg.statediagram [id*="state-DECLINED"] .nodeLabel,
-[data-theme='light'] .docusaurus-mermaid-container svg.statediagram [id*="state-REJECTED"] .nodeLabel,
-[data-theme='light'] .docusaurus-mermaid-container svg.statediagram [id*="state-CANCELLED"] .nodeLabel,
-[data-theme='light'] .docusaurus-mermaid-container svg.statediagram [id*="state-DECLINED"] foreignObject span,
-[data-theme='light'] .docusaurus-mermaid-container svg.statediagram [id*="state-REJECTED"] foreignObject span,
-[data-theme='light'] .docusaurus-mermaid-container svg.statediagram [id*="state-CANCELLED"] foreignObject span {
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-DECLINED"] .nodeLabel,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REJECTED"] .nodeLabel,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-CANCELLED"] .nodeLabel,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-DECLINED"] foreignObject span,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REJECTED"] foreignObject span,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-CANCELLED"] foreignObject span,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-DECLINED"] foreignObject p,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REJECTED"] foreignObject p,
+[data-theme='light'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-CANCELLED"] foreignObject p {
   color: #881337 !important;
 }
 [data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-DECLINED"] > rect.label-container,
@@ -472,12 +481,15 @@ html { scroll-behavior: smooth; }
   fill: #2A1018 !important;
   stroke: #FB7185 !important;
 }
-[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram [id*="state-DECLINED"] .nodeLabel,
-[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram [id*="state-REJECTED"] .nodeLabel,
-[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram [id*="state-CANCELLED"] .nodeLabel,
-[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram [id*="state-DECLINED"] foreignObject span,
-[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram [id*="state-REJECTED"] foreignObject span,
-[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram [id*="state-CANCELLED"] foreignObject span {
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-DECLINED"] .nodeLabel,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REJECTED"] .nodeLabel,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-CANCELLED"] .nodeLabel,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-DECLINED"] foreignObject span,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REJECTED"] foreignObject span,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-CANCELLED"] foreignObject span,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-DECLINED"] foreignObject p,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-REJECTED"] foreignObject p,
+[data-theme='dark'] .docusaurus-mermaid-container svg.statediagram .node.statediagram-state[id*="state-CANCELLED"] foreignObject p {
   color: #FDA4AF !important;
 }
 
