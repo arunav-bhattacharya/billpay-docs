@@ -24,54 +24,28 @@ The chart below is illustrative — it shows **how often** each schedule fires a
 collide with the bars.
 
 ```mermaid
-%%{init: {
-  'themeVariables': {
-    'fontSize': '15px',
-    'fontFamily': 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
-    'titleColor': '#0F0F1A',
-    'sectionBkgColor': 'rgba(15,42,74,0.05)',
-    'altSectionBkgColor': 'rgba(15,42,74,0.10)',
-    'taskTextColor': '#ffffff',
-    'taskTextLightColor': '#0F0F1A',
-    'taskTextOutsideColor': '#0F0F1A',
-    'taskTextDarkColor': '#ffffff',
-    'gridColor': 'rgba(148,163,184,0.30)'
-  },
-  'gantt': {
-    'leftPadding': 200,
-    'rightPadding': 40,
-    'topPadding': 40,
-    'barHeight': 30,
-    'barGap': 12,
-    'sectionFontSize': 15,
-    'fontSize': 15,
-    'gridLineStartPadding': 200,
-    'numberSectionStyles': 5,
-    'useMaxWidth': true
-  }
-}}%%
 gantt
   title Schedule cadence — illustrative
   dateFormat  HH:mm
   axisFormat  %H:%M
 
   section Schedule Payment Executor
-  Wave 1  :active, a1, 00:00, 1m
-  Wave 2  :active, a2, 00:01, 1m
-  Wave 3  :active, a3, 00:02, 1m
+  Wave 1 :active, a1, 00:00, 1m
+  Wave 2 :active, a2, 00:01, 1m
+  Wave 3 :active, a3, 00:02, 1m
 
   section Corporate Allocations
-  Wave 1                    :b1, 00:00, 1m
-  Wave 2                    :b2, 00:01, 1m
+  Wave 1 :b1, 00:00, 1m
+  Wave 2 :b2, 00:01, 1m
 
   section Paid Events Processor
-  Continuous batch          :done, c1, 00:00, 3m
+  Continuous batch :done, c1, 00:00, 3m
 
   section Missing Paid Events
-  Hourly sweep              :crit, d1, 00:00, 5m
+  Hourly sweep :crit, d1, 00:00, 5m
 
   section Data Purger
-  Daily run                 :e1, 00:00, 10m
+  Daily run :e1, 00:00, 10m
 ```
 
 ### At-a-glance cadence

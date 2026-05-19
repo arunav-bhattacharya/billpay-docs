@@ -8,13 +8,16 @@
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // Each entry: [bar-class, light-mode-stops, dark-mode-stops].
-// Stops go from soft (left) to saturated (right) — same hue, two shades.
+// Stops go from softer-saturated (left) to deeper-saturated (right) — same
+// hue, two shades — so white task text stays readable across the whole bar.
+// Mermaid v11 cycles section classes 0..N-1 then wraps back to 0, so the 5th
+// section (Data Purger here) inherits `task0` rather than `task4`.
 const SECTIONS = [
-  { cls: 'active0', light: ['#A5B4FC', '#6366F1'], dark: ['#C7D2FE', '#818CF8'] }, // indigo
-  { cls: 'task1',   light: ['#C4B5FD', '#8B5CF6'], dark: ['#DDD6FE', '#A78BFA'] }, // violet
-  { cls: 'done2',   light: ['#67E8F9', '#0891B2'], dark: ['#A5F3FC', '#22D3EE'] }, // cyan
-  { cls: 'crit3',   light: ['#FBBF24', '#D97706'], dark: ['#FCD34D', '#F59E0B'] }, // amber
-  { cls: 'task4',   light: ['#6EE7B7', '#10B981'], dark: ['#A7F3D0', '#34D399'] }, // mint
+  { cls: 'active0', light: ['#818CF8', '#4F46E5'], dark: ['#C7D2FE', '#818CF8'] }, // indigo
+  { cls: 'task1',   light: ['#A78BFA', '#7C3AED'], dark: ['#DDD6FE', '#A78BFA'] }, // violet
+  { cls: 'done2',   light: ['#22D3EE', '#0E7490'], dark: ['#A5F3FC', '#22D3EE'] }, // cyan
+  { cls: 'crit3',   light: ['#F59E0B', '#B45309'], dark: ['#FCD34D', '#F59E0B'] }, // amber
+  { cls: 'task0',   light: ['#34D399', '#059669'], dark: ['#A7F3D0', '#34D399'] }, // mint
 ];
 
 function gradientId(suffix, cls, theme) {
@@ -69,22 +72,21 @@ function applyToSvg(svg) {
   if (svg.dataset.bpGanttGradients === 'done') return;
   if (!isGanttSvg(svg)) return;
   ensureWrapperClass(svg);
-  // Solid fills preferred over gradients — bail out early after wrapper promotion.
-  // (Leaving the gradient-defs logic in place below for future re-enable.)
-  svg.dataset.bpGanttGradients = 'done';
-  return;
   const suffix = svg.id || Math.random().toString(36).slice(2, 8);
   const defs = ensureDefs(svg);
   SECTIONS.forEach(({ cls, light, dark }) => {
     appendGradient(defs, gradientId(suffix, cls, 'light'), light);
     appendGradient(defs, gradientId(suffix, cls, 'dark'), dark);
   });
-  // Wire each matching rect to the correct gradient for the current theme
+  // Wire each matching rect to the correct gradient for the current theme.
+  // Use setProperty(..., 'important') so the inline style beats the solid-fill
+  // !important fallbacks in custom.css.
   const apply = () => {
     const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     SECTIONS.forEach(({ cls }) => {
       svg.querySelectorAll(`rect.${cls}`).forEach((rect) => {
-        rect.style.fill = `url(#${gradientId(suffix, cls, theme)})`;
+        rect.style.setProperty('fill', `url(#${gradientId(suffix, cls, theme)})`, 'important');
+        rect.style.setProperty('stroke', 'none', 'important');
       });
     });
   };
@@ -103,7 +105,8 @@ function applyToSvg(svg) {
         var suf = s.id || s.dataset.bpGanttSuffix || '';
         SECTIONS.forEach(function (sec) {
           s.querySelectorAll('rect.' + sec.cls).forEach(function (rect) {
-            rect.style.fill = 'url(#' + gradientId(suf, sec.cls, theme) + ')';
+            rect.style.setProperty('fill', 'url(#' + gradientId(suf, sec.cls, theme) + ')', 'important');
+            rect.style.setProperty('stroke', 'none', 'important');
           });
         });
       });

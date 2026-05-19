@@ -1212,7 +1212,7 @@ html { scroll-behavior: smooth; }
   margin: 24px 0 16px;
   overflow-x: auto;
 }
-.bp-gantt-wrapper .docusaurus-mermaid-container { width: 100%; min-width: 0; }
+.bp-gantt-wrapper .docusaurus-mermaid-container { width: 100%; min-width: 0; justify-content: flex-start; }
 .bp-gantt-wrapper svg { width: 100%; height: auto; max-width: 100%; min-width: 0; }
 .bp-gantt-wrapper svg .sectionTitle,
 .bp-gantt-wrapper svg .titleText {
@@ -1595,20 +1595,20 @@ html { scroll-behavior: smooth; }
   stroke: #92400E !important;
   stroke-width: 1px !important;
 }
-.bp-gantt-wrapper svg .task4 {
-  fill: #0F2A4A !important;
-  stroke: #06152A !important;
+.bp-gantt-wrapper svg .task0 {
+  fill: #059669 !important;
+  stroke: #047857 !important;
   stroke-width: 1px !important;
 }
 
 /* Dark mode — slightly lifted versions of the same hues */
 [data-theme='dark'] .bp-gantt-wrapper svg .active0 {
-  fill: #2A4B73 !important;
-  stroke: #4B6B96 !important;
+  fill: #818CF8 !important;
+  stroke: #A5B4FC !important;
 }
 [data-theme='dark'] .bp-gantt-wrapper svg .task1 {
-  fill: #1F3D63 !important;
-  stroke: #2A4B73 !important;
+  fill: #A78BFA !important;
+  stroke: #C4B5FD !important;
 }
 [data-theme='dark'] .bp-gantt-wrapper svg .done2 {
   fill: #22D3EE !important;
@@ -1618,9 +1618,9 @@ html { scroll-behavior: smooth; }
   fill: #F59E0B !important;
   stroke: #FCD34D !important;
 }
-[data-theme='dark'] .bp-gantt-wrapper svg .task4 {
-  fill: #1F3D63 !important;
-  stroke: #2A4B73 !important;
+[data-theme='dark'] .bp-gantt-wrapper svg .task0 {
+  fill: #34D399 !important;
+  stroke: #6EE7B7 !important;
 }
 
 /* Task text on bars — white on the saturated brand colours */
