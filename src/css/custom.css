@@ -137,7 +137,7 @@ html { scroll-behavior: smooth; }
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
 }
 .navbar__title {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', sans-serif;
   font-weight: 700;
   letter-spacing: -0.022em;
   font-size: 1.05rem;
@@ -167,8 +167,10 @@ html { scroll-behavior: smooth; }
   padding: 16px 0;
 }
 
-/* Mermaid diagrams render text as SVG <text> elements — force JetBrains Mono
-   across every flavor (flowchart, sequence, state, gantt, timeline, ER). */
+/* Mermaid diagrams render text as SVG <text> elements — use the SF Mono
+   system stack across every flavor (flowchart, sequence, state, gantt,
+   timeline, ER). System fonts are already loaded when Mermaid runs, so the
+   font used for box measurement matches the font used for rendering. */
 .docusaurus-mermaid-container svg text,
 .docusaurus-mermaid-container svg foreignObject,
 .docusaurus-mermaid-container svg foreignObject div,
@@ -180,7 +182,7 @@ html { scroll-behavior: smooth; }
 .docusaurus-mermaid-container svg .noteText,
 .docusaurus-mermaid-container svg .label,
 .docusaurus-mermaid-container svg .titleText {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace !important;
 }
 
 /* Sequence-diagram readability in both themes.
@@ -351,15 +353,15 @@ html { scroll-behavior: smooth; }
 }
 
 /* Mermaid should render at natural size; the SVG already has useMaxWidth
-   so it scales to container. Make sure inner text doesn't get clipped by
-   foreignObject sizes that were measured before the font swapped in. */
+   so it scales to container. Keep `overflow: visible` as a safety belt for
+   sub-pixel rounding differences across OSes — but the measurement vs.
+   render font now agree (both system SF Mono), so labels naturally fit
+   their boxes and we no longer need to force nowrap or inline-block. */
 .docusaurus-mermaid-container svg foreignObject {
   overflow: visible !important;
 }
 .docusaurus-mermaid-container svg foreignObject > div {
-  white-space: nowrap !important;
   overflow: visible !important;
-  display: inline-block !important;
 }
 
 /* State-diagram transition labels — shrink for cleaner look on arrows */
@@ -749,7 +751,7 @@ html { scroll-behavior: smooth; }
   border-color: rgba(148,163,184,0.32);
 }
 
-/* Hero on home page — layered radial gradients on ink, JetBrains-flavored */
+/* Hero on home page — layered radial gradients on ink, SF Mono-flavored */
 .bp-hero {
   background: var(--bp-hero-bg);
   color: var(--bp-ink);
@@ -794,7 +796,7 @@ html { scroll-behavior: smooth; }
 }
 .bp-hero__eyebrow {
   display: inline-block;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', sans-serif;
   font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -810,9 +812,9 @@ html { scroll-behavior: smooth; }
   border-color: rgba(165, 180, 252, 0.18);
 }
 .bp-hero__title {
-  /* SF Pro Display on Apple devices; Inter (designed as an open SF Pro analogue)
-     everywhere else. Avoid pure monospace — body font but display-weight. */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  /* SF Pro Text on Apple devices; Inter (designed as an open SF Pro analogue)
+     everywhere else. Avoid pure monospace — body font at a display weight. */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', sans-serif;
   font-size: clamp(2.6rem, 5.4vw, 4.4rem);
   margin: 0 0 22px;
   letter-spacing: -0.008em;
@@ -940,7 +942,7 @@ html { scroll-behavior: smooth; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-top: 12px;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', sans-serif;
 }
 
 /* Feature card grid */

@@ -27,7 +27,7 @@ collide with the bars.
 %%{init: {
   'themeVariables': {
     'fontSize': '15px',
-    'fontFamily': 'JetBrains Mono, monospace',
+    'fontFamily': 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
     'titleColor': '#0F0F1A',
     'sectionBkgColor': 'rgba(15,42,74,0.05)',
     'altSectionBkgColor': 'rgba(15,42,74,0.10)',

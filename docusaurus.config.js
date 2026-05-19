@@ -53,7 +53,7 @@ const config = {
 
   stylesheets: [
     {
-      href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap',
+      href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
       rel: 'stylesheet',
     },
   ],
@@ -96,7 +96,7 @@ const config = {
       mermaid: {
         theme: {light: 'neutral', dark: 'dark'},
         options: {
-          fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+          fontFamily: 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
           flowchart: {
             htmlLabels: true,
             useMaxWidth: true,
@@ -106,9 +106,9 @@ const config = {
             curve: 'basis',
           },
           sequence: {
-            actorFontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
-            noteFontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
-            messageFontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+            actorFontFamily: 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
+            noteFontFamily: 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
+            messageFontFamily: 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
             actorFontSize: 12,
             messageFontSize: 11,
             noteFontSize: 11,
@@ -128,7 +128,7 @@ const config = {
             rankSpacing: 80,
           },
           themeVariables: {
-            fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+            fontFamily: 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
           },
         },
       },
