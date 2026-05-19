@@ -6,8 +6,15 @@ function Hero() {
   return (
     <header className="bp-hero">
       <div className="bp-hero__inner container">
-        <h1>Billpay Wiki</h1>
-        <p>
+        <div className="bp-hero__eyebrows">
+          <span className="bp-hero__eyebrow">PAYMENTS</span>
+          <span className="bp-hero__eyebrow">WORKFLOWS</span>
+          <span className="bp-hero__eyebrow">STATE MACHINES</span>
+        </div>
+        <h1 className="bp-hero__title">
+          Billpay <span className="bp-hero__title-grad">Wiki</span>
+        </h1>
+        <p className="bp-hero__sub">
           A reference for the APIs, Temporal workflows, scheduled jobs and state
           machines that move money through Billpay — designed for engineers
           building on it, and for product reviewing it.

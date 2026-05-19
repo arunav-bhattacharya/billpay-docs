@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start", "--", "--no-open", "--port", "3001"],
       "port": 3001
+    },
+    {
+      "name": "docs-serve",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "serve", "--", "--port", "3002", "--no-open"],
+      "port": 3002
     }
   ]
 }

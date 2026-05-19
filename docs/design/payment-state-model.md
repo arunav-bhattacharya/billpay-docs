@@ -4,86 +4,151 @@ title: The Payment State Model
 sidebar_position: 3
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # The Payment State Model
 
 Every payment in Billpay travels through a state machine. The same machine
 serves both payment-level (`trans_dtl`) and split-level
 (`split_trans_dtl`) records.
 
-## The states
+States are colour-coded by **lifecycle position only** — *non-terminal* (the payment is still moving) versus *terminal* (the payment is settled into a final state and will not transition further). The diagrams below are split by **payment type** — Consumer and Corporate share most of the lifecycle but Corporate adds an allocations side-loop.
 
-States are colour-coded by **lifecycle position only** — *non-terminal* (the payment is still moving) versus *terminal* (the payment is settled into a final state and will not transition further).
+<Tabs groupId="payment-type">
+
+<TabItem value="consumer" label="Consumer" default>
+
+## The states
 
 | State | Meaning | Terminal? |
 | --- | --- | --- |
-| <span className="bp-pill">PENDING</span> | The payment has been received and is awaiting initial processing. | No |
-| <span className="bp-pill">SCHEDULED</span> | The payment is set to execute at a future date. | No |
-| <span className="bp-pill">ALLOCATIONS_REQUESTED</span> | The payment is awaiting its allocation breakdown. | No |
-| <span className="bp-pill">ALLOCATIONS_RECEIVED</span> | The payment's allocation breakdown is available. | No |
-| <span className="bp-pill">ACCEPTED</span> | The payment is approved and ready to execute. | No |
-| <span className="bp-pill">PROCESSING</span> | The payment is currently being executed by notifying the respective systems to debit the funding account and credit the receiving account. | No |
-| <span className="bp-pill">PROCESSED</span> | The payment has been executed and fulfilled by Billpay by notifying all stakeholders. | No |
-| <span className="bp-pill">REPRESENTING</span> | A returned payment is scheduled to be re-attempted for settlement. | No |
-| <span className="bp-pill bp-pill--terminal">PAID</span> | The payment is settled and posted in accounts receivables. | **Yes** |
-| <span className="bp-pill bp-pill--terminal">RETURNED</span> | The payment did not settle; funds were returned. | **Yes** |
-| <span className="bp-pill bp-pill--terminal">REPRESENTED</span> | A returned payment was re-attempted and successfully settled. | **Yes** |
-| <span className="bp-pill bp-pill--terminal">DECLINED</span> | The payment was not approved for execution. | **Yes** |
-| <span className="bp-pill bp-pill--terminal">CANCELLED</span> | The payment was withdrawn before completion. | **Yes** |
-| <span className="bp-pill bp-pill--terminal">REJECTED</span> | The payment was not accepted in American Express. | **Yes** |
+| <span className="bp-pill bp-pill--intermediate">PENDING</span> | The payment has been received and is awaiting initial processing. | No |
+| <span className="bp-pill bp-pill--intermediate">SCHEDULED</span> | The payment is set to execute at a future date. | No |
+| <span className="bp-pill bp-pill--intermediate">ACCEPTED</span> | The payment is approved and ready to execute. | No |
+| <span className="bp-pill bp-pill--intermediate">PROCESSING</span> | The payment is currently being executed by notifying the respective systems to debit the funding account and credit the receiving account. | No |
+| <span className="bp-pill bp-pill--intermediate">PROCESSED</span> | The payment has been executed and fulfilled by Billpay by notifying all stakeholders. | No |
+| <span className="bp-pill bp-pill--intermediate">REPRESENTING</span> | A returned payment is scheduled to be re-attempted for settlement. | No |
+| <span className="bp-pill bp-pill--success">PAID</span> | The payment is settled and posted in accounts receivables. | **Yes** |
+| <span className="bp-pill bp-pill--success">RETURNED</span> | The payment did not settle; funds were returned. | **Yes** |
+| <span className="bp-pill bp-pill--success">REPRESENTED</span> | A returned payment was re-attempted and successfully settled. | **Yes** |
+| <span className="bp-pill bp-pill--danger">DECLINED</span> | The payment was not approved for execution. | **Yes** |
+| <span className="bp-pill bp-pill--danger">CANCELLED</span> | The payment was withdrawn before completion. | **Yes** |
+| <span className="bp-pill bp-pill--danger">REJECTED</span> | The payment was not accepted in American Express. | **Yes** |
 
 ## The big picture
 
 ```mermaid
 stateDiagram-v2
-  classDef nonterminal fill:#bfdbfe,stroke:#1d4ed8,stroke-width:2px,color:#0c1d51,font-weight:600
-  classDef terminal fill:#a16207,stroke:#713f12,stroke-width:2px,color:#fef9c3
+  direction TB
 
   [*] --> PENDING
-
   PENDING --> SCHEDULED: validate (schedule)
   PENDING --> ACCEPTED: validate (immediate)
-  PENDING --> DECLINED: validation failed
-  PENDING --> REJECTED: inbound declined
-
-  SCHEDULED --> ACCEPTED: executor fires + valid
-  SCHEDULED --> DECLINED: executor fires + invalid
-  SCHEDULED --> CANCELLED: cancel request
-  SCHEDULED --> ALLOCATIONS_REQUESTED: corporate scheduled
-
-  ACCEPTED --> ALLOCATIONS_REQUESTED: corporate immediate
-
-  ALLOCATIONS_REQUESTED --> ALLOCATIONS_RECEIVED
-  ALLOCATIONS_RECEIVED --> PROCESSING: split execution
-
+  SCHEDULED --> DECLINED: invalid
+  SCHEDULED --> ACCEPTED: valid
   ACCEPTED --> PROCESSING: clearing / posting
-  ACCEPTED --> CANCELLED
   PROCESSING --> PROCESSED: fulfillment
   PROCESSED --> PAID: AR Posted + Settled
 
-  PAID --> RETURNED: money movement
-  PROCESSED --> RETURNED
   PROCESSING --> RETURNED
+  PROCESSED --> RETURNED
+  PAID --> [*]
+  PAID --> RETURNED
+  RETURNED --> REPRESENTING: eligible (create representment)
+  REPRESENTING --> REPRESENTED: valid
+  PENDING --> DECLINED: validation failed
+  PENDING --> REJECTED: inbound declined
+  
+  SCHEDULED --> CANCELLED: cancel request
+  ACCEPTED --> CANCELLED
+  REPRESENTING --> DECLINED: invalid
 
-  RETURNED --> REPRESENTING: eligible
-  REPRESENTING --> REPRESENTED: valid representment
-  REPRESENTING --> DECLINED: invalid representment
-
+  
+  RETURNED --> [*]
+  REPRESENTED --> [*]
   DECLINED --> [*]
   CANCELLED --> [*]
   REJECTED --> [*]
-  PAID --> [*]
-  REPRESENTED --> [*]
-
-  class PENDING,SCHEDULED,ALLOCATIONS_REQUESTED,ALLOCATIONS_RECEIVED,ACCEPTED,PROCESSING,PROCESSED,REPRESENTING nonterminal
-  class PAID,RETURNED,REPRESENTED,DECLINED,CANCELLED,REJECTED terminal
 ```
 
-:::info[Corporate flow nuance]
-- **Corporate scheduled** → `SCHEDULED` → `ALLOCATIONS_REQUESTED` → `ALLOCATIONS_RECEIVED` → execution
-- **Corporate immediate** → `ACCEPTED` → `ALLOCATIONS_REQUESTED` → `ALLOCATIONS_RECEIVED` → execution
+</TabItem>
 
-In both cases the splits are then executed by `#ExecuteSplitPaymentWF` (on the Batch worker for Corporate).
+<TabItem value="corporate" label="Corporate">
+
+## The states
+
+Corporate payments add two states for the **allocations side-loop** — between the initial validate step and execution, the payment waits for its allocation breakdown.
+
+| State | Meaning | Terminal? |
+| --- | --- | --- |
+| <span className="bp-pill bp-pill--intermediate">PENDING</span> | The payment has been received and is awaiting initial processing. | No |
+| <span className="bp-pill bp-pill--intermediate">SCHEDULED</span> | The payment is set to execute at a future date. | No |
+| <span className="bp-pill bp-pill--intermediate">ALLOCATIONS_REQUESTED</span> | The payment is awaiting its allocation breakdown. | No |
+| <span className="bp-pill bp-pill--intermediate">ALLOCATIONS_RECEIVED</span> | The payment's allocation breakdown is available. | No |
+| <span className="bp-pill bp-pill--intermediate">ACCEPTED</span> | The payment is approved and ready to execute. | No |
+| <span className="bp-pill bp-pill--intermediate">PROCESSING</span> | The payment is currently being executed by notifying the respective systems to debit the funding account and credit the receiving account. | No |
+| <span className="bp-pill bp-pill--intermediate">PROCESSED</span> | The payment has been executed and fulfilled by Billpay by notifying all stakeholders. | No |
+| <span className="bp-pill bp-pill--intermediate">REPRESENTING</span> | A returned payment is scheduled to be re-attempted for settlement. | No |
+| <span className="bp-pill bp-pill--success">PAID</span> | The payment is settled and posted in accounts receivables. | **Yes** |
+| <span className="bp-pill bp-pill--success">RETURNED</span> | The payment did not settle; funds were returned. | **Yes** |
+| <span className="bp-pill bp-pill--success">REPRESENTED</span> | A returned payment was re-attempted and successfully settled. | **Yes** |
+| <span className="bp-pill bp-pill--danger">DECLINED</span> | The payment was not approved for execution. | **Yes** |
+| <span className="bp-pill bp-pill--danger">CANCELLED</span> | The payment was withdrawn before completion. | **Yes** |
+
+## The big picture
+
+```mermaid
+stateDiagram-v2
+  direction TB
+
+  [*] --> PENDING
+  PENDING --> SCHEDULED: validate (schedule)
+  PENDING --> ACCEPTED: validate (immediate)
+
+  SCHEDULED --> ALLOCATIONS_REQUESTED: scheduled → request allocations
+  ACCEPTED --> ALLOCATIONS_REQUESTED: immediate → request allocations
+  ALLOCATIONS_REQUESTED --> ALLOCATIONS_RECEIVED
+  ALLOCATIONS_RECEIVED --> PROCESSING: continue (immediate only)
+  ALLOCATIONS_RECEIVED --> DECLINED: invalid (scheduled only)
+  ALLOCATIONS_RECEIVED --> ACCEPTED: validate (scheduled only)
+
+  ACCEPTED --> PROCESSING: clearing / posting
+  PROCESSING --> PROCESSED: fulfillment
+  PROCESSED --> PAID: AR Posted + Settled
+
+  PROCESSING --> RETURNED
+  PROCESSED --> RETURNED
+  PAID --> [*]
+  PAID --> RETURNED
+  RETURNED --> REPRESENTING: eligible (create representment)
+  REPRESENTING --> REPRESENTED: valid
+
+  PENDING --> DECLINED: validation failed
+  SCHEDULED --> CANCELLED: cancel request
+  ACCEPTED --> CANCELLED
+  REPRESENTING --> DECLINED: invalid
+
+  RETURNED --> [*]
+  REPRESENTED --> [*]
+  DECLINED --> [*]
+  CANCELLED --> [*]
+```
+
+:::info[Scheduled vs. immediate]
+The path that exits `ALLOCATIONS_RECEIVED` depends on **when the payment was first validated**:
+
+- **Corporate scheduled** → `SCHEDULED` → `ALLOCATIONS_REQUESTED` → `ALLOCATIONS_RECEIVED` → `ACCEPTED` / `DECLINED`.
+  The payment was not validated up-front, so it is **validated now** against the received allocations before transitioning to `ACCEPTED`. This is the only path that uses `ALLOCATIONS_RECEIVED → ACCEPTED`.
+- **Corporate immediate** → `ACCEPTED` → `ALLOCATIONS_REQUESTED` → `ALLOCATIONS_RECEIVED` → `PROCESSING`.
+  The payment was already validated when it became `ACCEPTED`, so it **skips re-validation** and goes straight to `PROCESSING`.
+
+In both cases the splits are executed by `#ExecuteSplitPaymentWF` on the Batch worker.
 :::
+
+</TabItem>
+
+</Tabs>
 
 ## Lifecycle events
 

@@ -23,32 +23,31 @@ The chart below is illustrative — it shows **how often** each schedule fires a
 **how long** a single wave takes. Sections are widely spaced so labels don't
 collide with the bars.
 
-<div className="bp-gantt-wrapper">
-
 ```mermaid
 %%{init: {
   'themeVariables': {
-    'fontSize': '16px',
+    'fontSize': '15px',
     'fontFamily': 'JetBrains Mono, monospace',
-    'titleColor': '#cbd5e1',
-    'sectionBkgColor': 'rgba(148,163,184,0.10)',
-    'altSectionBkgColor': 'rgba(148,163,184,0.04)',
-    'taskTextColor': '#0f172a',
-    'taskTextLightColor': '#0f172a',
-    'taskTextOutsideColor': '#cbd5e1',
-    'taskTextDarkColor': '#0f172a',
-    'gridColor': 'rgba(148,163,184,0.4)'
+    'titleColor': '#0F0F1A',
+    'sectionBkgColor': 'rgba(15,42,74,0.05)',
+    'altSectionBkgColor': 'rgba(15,42,74,0.10)',
+    'taskTextColor': '#ffffff',
+    'taskTextLightColor': '#0F0F1A',
+    'taskTextOutsideColor': '#0F0F1A',
+    'taskTextDarkColor': '#ffffff',
+    'gridColor': 'rgba(148,163,184,0.30)'
   },
   'gantt': {
-    'leftPadding': 260,
+    'leftPadding': 200,
     'rightPadding': 40,
-    'topPadding': 30,
-    'barHeight': 26,
-    'barGap': 8,
-    'sectionFontSize': 14,
-    'fontSize': 14,
-    'gridLineStartPadding': 260,
-    'numberSectionStyles': 5
+    'topPadding': 40,
+    'barHeight': 30,
+    'barGap': 12,
+    'sectionFontSize': 15,
+    'fontSize': 15,
+    'gridLineStartPadding': 200,
+    'numberSectionStyles': 5,
+    'useMaxWidth': true
   }
 }}%%
 gantt
@@ -57,9 +56,9 @@ gantt
   axisFormat  %H:%M
 
   section Schedule Payment Executor
-  Wave 1 — 2,500 payments  :active, a1, 00:00, 1m
-  Wave 2 — 2,500 payments  :active, a2, 00:01, 1m
-  Wave 3 — 2,500 payments  :active, a3, 00:02, 1m
+  Wave 1  :active, a1, 00:00, 1m
+  Wave 2  :active, a2, 00:01, 1m
+  Wave 3  :active, a3, 00:02, 1m
 
   section Corporate Allocations
   Wave 1                    :b1, 00:00, 1m
@@ -74,8 +73,6 @@ gantt
   section Data Purger
   Daily run                 :e1, 00:00, 10m
 ```
-
-</div>
 
 ### At-a-glance cadence
 

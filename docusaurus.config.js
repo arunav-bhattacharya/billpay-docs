@@ -36,7 +36,10 @@ const config = {
   },
   themes: ['@docusaurus/theme-mermaid'],
 
-  clientModules: [require.resolve('./src/clientModules/colorize-mermaid-notes.js')],
+  clientModules: [
+    require.resolve('./src/clientModules/colorize-mermaid-notes.js'),
+    require.resolve('./src/clientModules/inject-gantt-gradients.js'),
+  ],
 
   i18n: {
     defaultLocale: 'en',
@@ -50,7 +53,7 @@ const config = {
 
   stylesheets: [
     {
-      href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=block',
+      href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap',
       rel: 'stylesheet',
     },
   ],

@@ -12,7 +12,7 @@ workflow can perform and which **Payment Service(s)** drive it.
 For a single, combined view of the full state model, see
 [The Payment State Model](../payment-state-model.md).
 
-## 1. `#CreateImmediatePaymentWF`
+## 1. Create Immediate Payment WF
 
 ```mermaid
 stateDiagram-v2
@@ -23,9 +23,9 @@ stateDiagram-v2
   ACCEPTED --> PROCESSING: execute (Full / Split)
   PROCESSING --> PROCESSED: fulfill
 
+  state "ACCEPTED (Splits)" as ACCEPTED_SPLITS
   ACCEPTED --> ACCEPTED_SPLITS: create splits (Consumer)
   ACCEPTED_SPLITS --> [*]: → #ExecuteSplitPaymentWF
-  ACCEPTED --> ALLOCATIONS_REQUESTED: if Corporate
 
   DECLINED --> [*]: notify
   PROCESSED --> [*]
@@ -37,11 +37,10 @@ stateDiagram-v2
 - **execute (Full / Split)** → `PaymentExecutionService` *(Full)* or `PaymentClearingService` *(Split, full-level clearing)*
 - **fulfill** → `PaymentFulfillmentService`
 - **create splits (Consumer)** → `PaymentSplitsCreationService`
-- **if Corporate** → triggers `#GetCorporatePaymentAllocationsWF`
 - **notify** (DECLINED) → `PaymentDeclinedNotificationService`
 :::
 
-## 2. `#CreateSchedulePaymentWF`
+## 2. Create Schedule Payment WF
 
 ```mermaid
 stateDiagram-v2
@@ -60,7 +59,7 @@ stateDiagram-v2
 - **notify** (DECLINED) → `PaymentDeclinedNotificationService`
 :::
 
-## 3. `#ExecuteScheduledPaymentWF`
+## 3. Execute Scheduled Payment WF
 
 ```mermaid
 stateDiagram-v2
@@ -77,6 +76,7 @@ stateDiagram-v2
   ACCEPTED --> PROCESSING: execute (Full / Split)
   PROCESSING --> PROCESSED: fulfill
 
+  state "ACCEPTED (Splits)" as ACCEPTED_SPLITS
   ACCEPTED --> ACCEPTED_SPLITS: create splits (Consumer)
   ACCEPTED_SPLITS --> [*]: → #ExecuteSplitPaymentWF
 
@@ -92,7 +92,7 @@ stateDiagram-v2
 - **notify** (DECLINED) → `PaymentDeclinedOnExecutionNotificationService`
 :::
 
-## 4. `#ExecuteSplitPaymentWF`
+## 4. Execute Split Payment WF
 
 Operates at **split level** on `split_trans_dtl`.
 
@@ -109,7 +109,7 @@ stateDiagram-v2
 - **fulfill** → `PaymentFulfillmentService` *(split)* + `PaymentSplitStateTransitionService`
 :::
 
-## 5. `#CancelPaymentWF`
+## 5. Cancel Payment WF
 
 ```mermaid
 stateDiagram-v2
@@ -127,7 +127,7 @@ stateDiagram-v2
 - **cancel** → `PaymentCancellationService` + `PaymentStateTransitionService`
 :::
 
-## 6. `#UpdatePaymentWF`
+## 6. Update Payment WF
 
 ```mermaid
 stateDiagram-v2
@@ -158,17 +158,18 @@ stateDiagram-v2
 - **map old → new** → `MapNewPaymentIdToPreviousIdService` *(records the relationship in `ORIG_TRANS_REFER_MAP`)*
 :::
 
-## 7. `#ProcessReturnedPaymentWF`
+## 7. Process Returned Payment WF
 
 ```mermaid
 stateDiagram-v2
   state Current <<choice>>
+  state "PAID" as PaidSource
   [*] --> Current: idempotency + validate
-  Current --> PAID
+  Current --> PaidSource
   Current --> PROCESSING
   Current --> PROCESSED
 
-  PAID --> RETURNED: return
+  PaidSource --> RETURNED: return
   PROCESSING --> RETURNED: return
   PROCESSED --> RETURNED: return
 
@@ -184,7 +185,7 @@ stateDiagram-v2
 - **invalid return** (no state transition) → `PaymentInvalidReturnNotificationService`
 :::
 
-## 8. `#ProcessRepresentmentWF`
+## 8. Process Representment WF
 
 ```mermaid
 stateDiagram-v2
@@ -201,7 +202,7 @@ stateDiagram-v2
 - **invalid** → state transition only via `PaymentStateTransitionService`
 :::
 
-## 9. `#GetCorporatePaymentAllocationsWF`
+## 9. Get Corporate Payment Allocations WF
 
 ```mermaid
 stateDiagram-v2
@@ -223,21 +224,23 @@ stateDiagram-v2
 - **receive + create splits** → `AllocationsReceivedService` + `PaymentSplitsCreationService` + `PaymentStateTransitionService`
 :::
 
-## 10. `#ProcessInboundPaymentWF`
+## 10. Process Inbound Payment WF
 
 ```mermaid
 stateDiagram-v2
+  state "DECLINED" as InboundDeclined
   [*] --> PENDING: idempotency
   PENDING --> ACCEPTED: validate
-  PENDING --> DECLINED: invalid
+  PENDING --> InboundDeclined: invalid
 
   ACCEPTED --> PROCESSING: post
   PROCESSING --> PROCESSED: fulfill
 
+  state "ACCEPTED (Splits)" as ACCEPTED_SPLITS
   ACCEPTED --> ACCEPTED_SPLITS: create splits (Consumer)
   ACCEPTED_SPLITS --> [*]: → #ExecuteSplitPaymentWF
 
-  DECLINED --> REJECTED: reject
+  InboundDeclined --> REJECTED: reject
   REJECTED --> [*]
   PROCESSED --> [*]
 ```
@@ -251,7 +254,7 @@ stateDiagram-v2
 - **reject** → `PaymentRejectionService` + `PaymentStateTransitionService`
 :::
 
-## 11. `#CreateBalanceRefundWF`
+## 11. Create Balance Refund WF
 
 ```mermaid
 stateDiagram-v2
@@ -263,3 +266,17 @@ stateDiagram-v2
   PROCESSED --> [*]
   DECLINED --> [*]
 ```
+
+## 12. Paid Events Processing Workflow
+
+```mermaid
+stateDiagram-v2
+  [*] --> PROCESSED: idempotency + validate
+  PROCESSED --> PAID: settle
+  PAID --> [*]
+```
+
+:::note[Service mapping]
+- **idempotency + validate** → `ExistingPaymentIdempotencyService` + `PaidEventValidationService`
+- **settle** → `PaymentSettlementService` + `PaymentStateTransitionService`
+:::
