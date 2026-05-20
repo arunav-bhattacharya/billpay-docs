@@ -10,14 +10,15 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 // Each entry: [bar-class, light-mode-stops, dark-mode-stops].
 // Stops go from softer-saturated (left) to deeper-saturated (right) — same
 // hue, two shades — so white task text stays readable across the whole bar.
-// Mermaid v11 cycles section classes 0..N-1 then wraps back to 0, so the 5th
-// section (Data Purger here) inherits `task0` rather than `task4`.
+// With `numberSectionStyles: 5` set in docusaurus.config.js mermaid options,
+// the 5 sections get classes 0..4 (no wrap-around), so the Data Purger row
+// is `task4`.
 const SECTIONS = [
   { cls: 'active0', light: ['#818CF8', '#4F46E5'], dark: ['#C7D2FE', '#818CF8'] }, // indigo
   { cls: 'task1',   light: ['#A78BFA', '#7C3AED'], dark: ['#DDD6FE', '#A78BFA'] }, // violet
   { cls: 'done2',   light: ['#22D3EE', '#0E7490'], dark: ['#A5F3FC', '#22D3EE'] }, // cyan
   { cls: 'crit3',   light: ['#F59E0B', '#B45309'], dark: ['#FCD34D', '#F59E0B'] }, // amber
-  { cls: 'task0',   light: ['#34D399', '#059669'], dark: ['#A7F3D0', '#34D399'] }, // mint
+  { cls: 'task4',   light: ['#34D399', '#059669'], dark: ['#A7F3D0', '#34D399'] }, // mint
 ];
 
 function gradientId(suffix, cls, theme) {
@@ -68,6 +69,54 @@ function ensureWrapperClass(svg) {
   }
 }
 
+// Text-fill palette per theme. Inline !important via setProperty is the only
+// reliable way to beat mermaid's per-SVG injected `<style>` block, which uses
+// `#mermaid-svg-XXX .activeText0 { fill:#333 !important }` selectors with
+// higher specificity than any external CSS we can write.
+const TEXT_PALETTE = {
+  light: {
+    inside: '#FFFFFF',      // labels rendered over the saturated gradient bars
+    outside: '#0F0F1A',     // labels rendered in the chart-area whitespace
+    section: '#0F0F1A',     // left-column section names
+    title: '#0F0F1A',       // chart title
+    tick: '#6B6E78',        // x-axis time labels
+  },
+  dark: {
+    inside: '#0F0F1A',      // gradient bars are pastel-light in dark mode
+    outside: '#E5EEF9',     // labels in dark chart whitespace
+    section: '#E5EEF9',
+    title: '#F1F5F9',
+    tick: '#8D909C',
+  },
+};
+
+function paintText(svg, theme) {
+  const p = TEXT_PALETTE[theme];
+  // Outside-bar labels (left or right of the bar) — readable on chart whitespace.
+  svg.querySelectorAll('text.taskTextOutsideRight, text.taskTextOutsideLeft, text[class*="taskTextOutside"]').forEach((t) => {
+    t.style.setProperty('fill', p.outside, 'important');
+  });
+  // Inside-bar labels — readable on the gradient. `taskText*`, `activeText*`,
+  // `doneText*`, `critText*` all classify an inside-bar label.
+  svg.querySelectorAll('text.taskText, text[class*="activeText"], text[class*="doneText"], text[class*="critText"]').forEach((t) => {
+    // Skip if it's actually classified as outside (these classes co-exist on outside labels too).
+    if (/taskTextOutside/.test(t.getAttribute('class') || '')) return;
+    t.style.setProperty('fill', p.inside, 'important');
+  });
+  // Left-column section labels
+  svg.querySelectorAll('text.sectionTitle, text[class*="sectionTitle"]').forEach((t) => {
+    t.style.setProperty('fill', p.section, 'important');
+  });
+  // Chart title
+  svg.querySelectorAll('text.titleText').forEach((t) => {
+    t.style.setProperty('fill', p.title, 'important');
+  });
+  // X-axis tick labels
+  svg.querySelectorAll('g.grid g.tick text, g.tick text').forEach((t) => {
+    t.style.setProperty('fill', p.tick, 'important');
+  });
+}
+
 function applyToSvg(svg) {
   if (svg.dataset.bpGanttGradients === 'done') return;
   if (!isGanttSvg(svg)) return;
@@ -78,9 +127,9 @@ function applyToSvg(svg) {
     appendGradient(defs, gradientId(suffix, cls, 'light'), light);
     appendGradient(defs, gradientId(suffix, cls, 'dark'), dark);
   });
-  // Wire each matching rect to the correct gradient for the current theme.
-  // Use setProperty(..., 'important') so the inline style beats the solid-fill
-  // !important fallbacks in custom.css.
+  // Wire each matching rect to the correct gradient AND paint all text fills
+  // for the current theme. Use setProperty(..., 'important') so inline styles
+  // beat both our custom.css and mermaid's per-SVG injected <style> block.
   const apply = () => {
     const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     SECTIONS.forEach(({ cls }) => {
@@ -89,6 +138,7 @@ function applyToSvg(svg) {
         rect.style.setProperty('stroke', 'none', 'important');
       });
     });
+    paintText(svg, theme);
   };
   apply();
   svg.dataset.bpGanttGradients = 'done';
@@ -109,6 +159,7 @@ function applyToSvg(svg) {
             rect.style.setProperty('stroke', 'none', 'important');
           });
         });
+        paintText(s, theme);
       });
     };
   }

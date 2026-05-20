@@ -1595,7 +1595,7 @@ html { scroll-behavior: smooth; }
   stroke: #92400E !important;
   stroke-width: 1px !important;
 }
-.bp-gantt-wrapper svg .task0 {
+.bp-gantt-wrapper svg .task4 {
   fill: #059669 !important;
   stroke: #047857 !important;
   stroke-width: 1px !important;
@@ -1618,7 +1618,7 @@ html { scroll-behavior: smooth; }
   fill: #F59E0B !important;
   stroke: #FCD34D !important;
 }
-[data-theme='dark'] .bp-gantt-wrapper svg .task0 {
+[data-theme='dark'] .bp-gantt-wrapper svg .task4 {
   fill: #34D399 !important;
   stroke: #6EE7B7 !important;
 }

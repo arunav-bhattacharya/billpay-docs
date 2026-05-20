@@ -39,7 +39,7 @@ gantt
   Wave 2 :b2, 00:01, 1m
 
   section Paid Events Processor
-  Continuous batch :done, c1, 00:00, 3m
+  Batch close :done, c1, 00:00, 3m
 
   section Missing Paid Events
   Hourly sweep :crit, d1, 00:00, 5m
