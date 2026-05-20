@@ -16,14 +16,15 @@ The routing key is a small, immutable value object the workflow constructs once 
 ```kotlin
 @Serializable
 data class PaymentContext(
-    val market: Market,
-    val accountType: AccountType,
-    val source: Source,
-    val frequency: Frequency,
+    val paymentMethod: PaymentMethod,
+    val market:        Market,
+    val accountType:   AccountType,
+    val frequency:     Frequency,
+    val paymentState:  PaymentState,
 )
 ```
 
-It is built from the request at workflow start and is the **only** input the resolver consults. Nothing else — not the time, not the clock, not the worker — affects which implementation gets picked.
+`PaymentContext` carries every committed axis; a service may bind any subset of them via `@VariesOn`. It is built from the request at workflow start and is the **only** input the resolver consults. Nothing else — not the time, not the clock, not the worker — affects which implementation gets picked.
 
 ## Workflows invoke services directly
 
@@ -38,7 +39,7 @@ class CreatePaymentWFImpl(
 ) : CreatePaymentWF {
 
     override fun run(req: CreatePaymentRequest): PaymentResult = runBlocking {
-        val ctx = PaymentContext(req.market, req.accountType, req.source, req.frequency)
+        val ctx = PaymentContext(req.paymentMethod, req.market, req.accountType, req.frequency, req.paymentState)
         var payload = PaymentPayload(payment = PendingPayment.from(req))
 
         val validated = validationResolver.resolve(ctx)
@@ -66,56 +67,57 @@ The full payload-threading walkthrough is on [Data Flow](./data-flow.md#workflow
 
 ## Specificity-based resolution
 
-Every registered tuple gets a **score** computed from which axes it binds. The resolver picks the highest-scoring tuple that matches the context.
+Every registered tuple gets a **score** computed from which axes it binds. The resolver picks the highest-scoring tuple that matches the context. The policy encoded in the weights is: **payment-state is the most specific** (which exact lifecycle moment the variant covers), then frequency, then account-type, then market, with **payment-method (push vs pull) the most general** — a binary world-split that should fall back behind every other axis.
 
 | Axis bound | Weight |
 | --- | ---: |
-| `source` | 8 |
-| `frequency` | 4 |
-| `accountType` | 2 |
-| `market` | 1 |
+| `paymentState` | 16 |
+| `frequency` | 8 |
+| `accountType` | 4 |
+| `market` | 2 |
+| `paymentMethod` | 1 |
 
-The weights are powers of two so no two axis combinations can tie. `(market + source)` scores 9; `(market + frequency)` scores 5; `(market + accountType)` scores 3 — distinct, total ordering, no tiebreaker needed.
+The weights are powers of two so no two axis combinations can tie. `(market + paymentState)` scores 18; `(market + frequency)` scores 10; `(market + accountType)` scores 6 — distinct, total ordering, no tiebreaker needed.
 
 A `@PaymentVariant(generic = true)` tuple has score `0` and matches any context.
 
 ## Worked example — `PaymentValidationService`
 
-Suppose three rulebooks/impls are registered for `PaymentValidationService`:
+Suppose three rulebooks/impls are registered for `PaymentValidationService`. Tuples are shown in `(paymentMethod, market, accountType, frequency, paymentState)` order:
 
 | Impl / rulebook | Tuple | Score |
 | --- | --- | ---: |
-| `…UKConsumerImpl` (or `UkConsumerRulebook`) | `(GB, CONSUMER, *, *)` | 3 |
-| `…UKConsumerAutopayImpl` (or `UkConsumerAutopayRulebook`) | `(GB, CONSUMER, Autopay, Recurring)` | 15 |
-| `…USCorporateImpl` (or `UsCorporateRulebook`) | `(US, CORPORATE, *, *)` | 3 |
+| `…UKConsumerImpl` (or `UkConsumerRulebook`) | `(*, GB, CONSUMER, *, *)` | `2 + 4 = 6` |
+| `…UKConsumerRecurringPendingPushImpl` (or `UkConsumerRecurringPendingPushRulebook`) | `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | `1 + 2 + 4 + 8 + 16 = 31` |
+| `…USCorporateImpl` (or `UsCorporateRulebook`) | `(*, US, CORPORATE, *, *)` | `2 + 4 = 6` |
 
-### Context A: `(GB, CONSUMER, Autopay, Recurring)`
-
-| Candidate | Matches? | Score |
-| --- | --- | ---: |
-| `(GB, CONSUMER, *, *)` | yes | 3 |
-| `(GB, CONSUMER, Autopay, Recurring)` | yes | **15 ◄** |
-| `(US, CORPORATE, *, *)` | no (market) | — |
-
-Resolver returns the Autopay-Recurring impl.
-
-### Context B: `(GB, CONSUMER, App, Immediate)`
+### Context A: `(PUSH, GB, CONSUMER, RECURRING, PENDING)`
 
 | Candidate | Matches? | Score |
 | --- | --- | ---: |
-| `(GB, CONSUMER, *, *)` | yes | **3 ◄** |
-| `(GB, CONSUMER, Autopay, Recurring)` | no (source) | — |
-| `(US, CORPORATE, *, *)` | no (market) | — |
+| `(*, GB, CONSUMER, *, *)` | yes | 6 |
+| `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | yes | **31 ◄** |
+| `(*, US, CORPORATE, *, *)` | no (market, accountType) | — |
 
-Resolver returns the UK Consumer base impl. **Hierarchical fallback is automatic** — the Autopay tuple didn't match, but the more general one did. No separate fallback table is maintained; the score ordering produces it.
+Resolver returns the Recurring-Pending-Push impl.
 
-### Context C: `(MX, CONSUMER, App, Immediate)`
+### Context B: `(PULL, GB, CONSUMER, IMMEDIATE, PENDING)`
 
 | Candidate | Matches? | Score |
 | --- | --- | ---: |
-| `(GB, CONSUMER, *, *)` | no (market) | — |
-| `(GB, CONSUMER, Autopay, Recurring)` | no | — |
-| `(US, CORPORATE, *, *)` | no | — |
+| `(*, GB, CONSUMER, *, *)` | yes | **6 ◄** |
+| `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | no (paymentMethod, frequency) | — |
+| `(*, US, CORPORATE, *, *)` | no (market, accountType) | — |
+
+Resolver returns the UK Consumer base impl. **Hierarchical fallback is automatic** — the Recurring-Pending-Push tuple didn't match, but the more general one did. No separate fallback table is maintained; the score ordering produces it.
+
+### Context C: `(PUSH, MX, CONSUMER, IMMEDIATE, PENDING)`
+
+| Candidate | Matches? | Score |
+| --- | --- | ---: |
+| `(*, GB, CONSUMER, *, *)` | no (market) | — |
+| `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | no | — |
+| `(*, US, CORPORATE, *, *)` | no | — |
 
 No match, no `generic = true` impl. Resolver throws `NoVariantImplFoundException`. See [Failure modes](#failure-modes) for what happens next.
 

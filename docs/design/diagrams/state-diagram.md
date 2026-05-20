@@ -32,12 +32,12 @@ stateDiagram-v2
 ```
 
 :::note[Service mapping]
-- **idempotency** → `NewPaymentIdempotencyService`
+- **idempotency** → `IdempotencyService`
 - **validate** → `PaymentValidationService` + `PaymentStateTransitionService`
 - **execute (Full / Split)** → `PaymentExecutionService` *(Full)* or `PaymentClearingService` *(Split, full-level clearing)*
 - **fulfill** → `PaymentFulfillmentService`
 - **create splits (Consumer)** → `PaymentSplitsCreationService`
-- **notify** (DECLINED) → `PaymentDeclinedNotificationService`
+- **notify** (DECLINED) → `EventNotificationService`
 :::
 
 ## 2. Create Schedule Payment WF
@@ -53,10 +53,10 @@ stateDiagram-v2
 ```
 
 :::note[Service mapping]
-- **idempotency** → `NewPaymentIdempotencyService`
-- **validate** → `PaymentValidationOnSchedulingService` + `PaymentStateTransitionService`
-- **notify** (SCHEDULED) → `PaymentScheduledNotificationService` *(Corporate additionally triggers `#GetCorporatePaymentAllocationsWF`)*
-- **notify** (DECLINED) → `PaymentDeclinedNotificationService`
+- **idempotency** → `IdempotencyService`
+- **validate** → `PaymentValidationService` + `PaymentStateTransitionService`
+- **notify** (SCHEDULED) → `EventNotificationService` *(Corporate additionally triggers `#GetCorporatePaymentAllocationsWF`)*
+- **notify** (DECLINED) → `EventNotificationService`
 :::
 
 ## 3. Execute Scheduled Payment WF
@@ -85,11 +85,11 @@ stateDiagram-v2
 ```
 
 :::note[Service mapping]
-- **validate** → `PaymentValidationOnExecutionService` + `PaymentStateTransitionService`
+- **validate** → `PaymentValidationService` + `PaymentStateTransitionService`
 - **execute (Full / Split)** → `PaymentExecutionService` *(Full)* or `PaymentClearingService` *(Split, full-level clearing)*
 - **fulfill** → `PaymentFulfillmentService`
 - **create splits (Consumer)** → `PaymentSplitsCreationService`
-- **notify** (DECLINED) → `PaymentDeclinedOnExecutionNotificationService`
+- **notify** (DECLINED) → `EventNotificationService`
 :::
 
 ## 4. Execute Split Payment WF
@@ -123,7 +123,7 @@ stateDiagram-v2
 ```
 
 :::note[Service mapping]
-- **idempotency + validate** → `ExistingPaymentIdempotencyService` + `PaymentCancelValidationService`
+- **idempotency + validate** → `IdempotencyService` + `PaymentCancelValidationService`
 - **cancel** → `PaymentCancellationService` + `PaymentStateTransitionService`
 :::
 
@@ -153,7 +153,7 @@ stateDiagram-v2
 ```
 
 :::note[Service mapping]
-- **idempotency** → `ExistingPaymentIdempotencyService`
+- **idempotency** → `IdempotencyService`
 - **→ #CancelPaymentWF / → #CreateSchedulePaymentWF** → child workflows
 - **map old → new** → `MapNewPaymentIdToPreviousIdService` *(records the relationship in `ORIG_TRANS_REFER_MAP`)*
 :::
@@ -179,10 +179,10 @@ stateDiagram-v2
 ```
 
 :::note[Service mapping]
-- **idempotency + validate** → `ExistingPaymentIdempotencyService` + `PaymentReturnValidationService`
+- **idempotency + validate** → `IdempotencyService` + `PaymentReturnValidationService`
 - **return** → `PaymentReturnExecutionService` + `PaymentStateTransitionService`
 - **create representment** → `PaymentRepresentmentEligibilityService` + `PaymentRepresentmentCreationService`
-- **invalid return** (no state transition) → `PaymentInvalidReturnNotificationService`
+- **invalid return** (no state transition) → `EventNotificationService`
 :::
 
 ## 8. Process Representment WF
@@ -246,8 +246,8 @@ stateDiagram-v2
 ```
 
 :::note[Service mapping]
-- **idempotency** → `NewPaymentIdempotencyService`
-- **validate** → `PaymentValidationOnPostingService` + `PaymentStateTransitionService`
+- **idempotency** → `IdempotencyService`
+- **validate** → `PaymentValidationService` + `PaymentStateTransitionService`
 - **post** → `PaymentPostingService` + `PaymentStateTransitionService`
 - **fulfill** → `PaymentFulfillmentService` + `PaymentStateTransitionService`
 - **create splits (Consumer)** → `PaymentSplitsCreationService`
@@ -277,6 +277,6 @@ stateDiagram-v2
 ```
 
 :::note[Service mapping]
-- **idempotency + validate** → `ExistingPaymentIdempotencyService` + `PaidEventValidationService`
+- **idempotency + validate** → `IdempotencyService` + `PaidEventValidationService`
 - **settle** → `PaymentSettlementService` + `PaymentStateTransitionService`
 :::

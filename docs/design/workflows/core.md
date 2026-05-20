@@ -36,7 +36,7 @@ For the state-machine view of every workflow on a single page, jump to
 
 **Steps**
 
-1. `Input → PENDING` via `NewPaymentIdempotencyService`
+1. `Input → PENDING` via `IdempotencyService`
 2. `PENDING → ACCEPTED` *or* `DECLINED` via `PaymentValidationService` + `PaymentStateTransitionService`
 3. **If `ACCEPTED` & Full payment:**
    - `ACCEPTED → PROCESSING` via `PaymentExecutionService` + `PaymentStateTransitionService`
@@ -46,7 +46,7 @@ For the state-machine view of every workflow on a single page, jump to
    - **Consumer** → create splits via `PaymentSplitsCreationService`, then trigger `#ExecuteSplitPaymentWF`
    - If **clearing at Full level** → `ACCEPTED → PROCESSING` via `PaymentClearingService` + `PaymentStateTransitionService`
 5. **Else if `DECLINED`:**
-   - `PaymentDeclinedNotificationService`
+   - `EventNotificationService`
 
 ## 2. `#CreateSchedulePaymentWF`
 
@@ -55,13 +55,13 @@ For the state-machine view of every workflow on a single page, jump to
 
 **Steps**
 
-1. `Input → PENDING` via `NewPaymentIdempotencyService`
-2. `PENDING → SCHEDULED` *or* `DECLINED` via `PaymentValidationOnSchedulingService` + `PaymentStateTransitionService`
+1. `Input → PENDING` via `IdempotencyService`
+2. `PENDING → SCHEDULED` *or* `DECLINED` via `PaymentValidationService` + `PaymentStateTransitionService`
 3. **If `SCHEDULED`:**
-   - `PaymentScheduledNotificationService`
+   - `EventNotificationService`
    - If **Corporate** → trigger `#GetCorporatePaymentAllocationsWF`
 4. **If `DECLINED`:**
-   - `PaymentDeclinedNotificationService`
+   - `EventNotificationService`
 
 ## 3. `#ExecuteScheduledPaymentWF`
 
@@ -70,7 +70,7 @@ For the state-machine view of every workflow on a single page, jump to
 
 **Steps**
 
-1. `SCHEDULED` / `ALLOCATIONS_RECEIVED` → `ACCEPTED` *or* `DECLINED` via `PaymentValidationOnExecutionService` + `PaymentStateTransitionService`
+1. `SCHEDULED` / `ALLOCATIONS_RECEIVED` → `ACCEPTED` *or* `DECLINED` via `PaymentValidationService` + `PaymentStateTransitionService`
 2. **If `ACCEPTED` & Full payment:**
    - `ACCEPTED → PROCESSING` via `PaymentExecutionService` + `PaymentStateTransitionService`
    - `PROCESSING → PROCESSED` via `PaymentFulfillmentService` + `PaymentStateTransitionService`
@@ -78,7 +78,7 @@ For the state-machine view of every workflow on a single page, jump to
    - **Consumer** → create splits at split-tx level via `PaymentSplitsCreationService`, then trigger `#ExecuteSplitPaymentWF`
    - If **clearing at Full level** → `ACCEPTED → PROCESSING` via `PaymentClearingService` + `PaymentStateTransitionService`
 4. **Else if `DECLINED`:**
-   - `PaymentDeclinedOnExecutionNotificationService`
+   - `EventNotificationService`
 
 ## 4. `#ExecuteSplitPaymentWF`
 
@@ -100,7 +100,7 @@ For the state-machine view of every workflow on a single page, jump to
 
 **Steps**
 
-1. `ExistingPaymentIdempotencyService` (no state transition)
+1. `IdempotencyService` (no state transition)
 2. `PaymentCancelValidationService` (no state transition)
 3. **If eligible:** `SCHEDULED` / `ACCEPTED` → `CANCELLED` via `PaymentCancellationService` + `PaymentStateTransitionService`
 
@@ -111,7 +111,7 @@ For the state-machine view of every workflow on a single page, jump to
 
 **Steps**
 
-1. `Input → PENDING` via `ExistingPaymentIdempotencyService`
+1. `Input → PENDING` via `IdempotencyService`
 2. Cancel the original: `SCHEDULED → CANCELLED` via child `#CancelPaymentWF`
 3. Create the replacement: `PENDING → SCHEDULED` *or* `DECLINED` via child `#CreateSchedulePaymentWF`
 4. Persist the link old → new via `MapNewPaymentIdToPreviousIdService`
@@ -123,12 +123,12 @@ For the state-machine view of every workflow on a single page, jump to
 
 **Steps**
 
-1. `ExistingPaymentIdempotencyService` + `PaymentReturnValidationService`
+1. `IdempotencyService` + `PaymentReturnValidationService`
 2. **If valid return** (also identify split vs. full):
    - `PAID` / `PROCESSING` / `PROCESSED` → `RETURNED` via `PaymentReturnExecutionService` + `PaymentStateTransitionService`
    - If representable (`PaymentRepresentmentEligibilityService`):
      - Create a new `REPRESENTING` presentment via `PaymentRepresentmentCreationService`
-3. **Else (invalid return):** notify via `PaymentInvalidReturnNotificationService` — no state transition, payment stays in its current state
+3. **Else (invalid return):** notify via `EventNotificationService` — no state transition, payment stays in its current state
 
 ## 8. `#ProcessRepresentmentWF`
 
@@ -158,8 +158,8 @@ For the state-machine view of every workflow on a single page, jump to
 
 **Steps**
 
-1. `Input → PENDING` via `NewPaymentIdempotencyService`
-2. `PENDING → ACCEPTED` *or* `DECLINED` via `PaymentValidationOnPostingService` + `PaymentStateTransitionService`
+1. `Input → PENDING` via `IdempotencyService`
+2. `PENDING → ACCEPTED` *or* `DECLINED` via `PaymentValidationService` + `PaymentStateTransitionService`
 3. **If `ACCEPTED` & Full:**
    - `PROCESSING` via `PaymentPostingService` + `PaymentStateTransitionService`
    - `PROCESSED` via `PaymentFulfillmentService` + `PaymentStateTransitionService`

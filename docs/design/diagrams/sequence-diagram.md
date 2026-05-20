@@ -23,7 +23,7 @@ Inside the body:
 - **Amber-tinted rectangles** mark async work that happens *after* the client has been responded to.
 - **Fuchsia/pink-tinted rectangles** pop out **state transitions** — moments where the payment moves from one lifecycle state to another (`PENDING → ACCEPTED`, `PROCESSING → PROCESSED`, etc.).
 
-Each Payment Service appears as its **own participant**. To keep diagrams readable, the participant label drops the redundant `Payment` prefix and `Service` suffix — e.g., `Execution` represents `PaymentExecutionService`, `Idempotency Check` covers both `NewPaymentIdempotencyService` and `ExistingPaymentIdempotencyService`. External systems and infrastructure (clearing, AR, OTB, accounting, database, event bus) are intentionally omitted — they're internal implementation details of the services that own them.
+Each Payment Service appears as its **own participant**. To keep diagrams readable, the participant label drops the redundant `Payment` prefix and `Service` suffix — e.g., `Execution` represents `PaymentExecutionService`. Participants whose label hints at a *role* (`Idempotency Check`, `Validation (Schedule)`, `Decline Notify`, …) all resolve to the same underlying service — `IdempotencyService`, `PaymentValidationService`, or `EventNotificationService` — selected by variant. External systems and infrastructure (clearing, AR, OTB, accounting, database, event bus) are intentionally omitted — they're internal implementation details of the services that own them.
 
 ## 1. Immediate payment — single instruction
 

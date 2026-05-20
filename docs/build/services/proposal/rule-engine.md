@@ -118,16 +118,17 @@ val UkConsumerBaseRulebook = rulebook {
 }
 
 @Rulebook(
-    service     = PaymentValidationService::class,
-    market      = "GB",
-    accountType = AccountType.CONSUMER,
-    source      = SourceTag.AUTOPAY,
-    frequency   = Frequency.RECURRING,
+    service       = PaymentValidationService::class,
+    paymentMethod = PaymentMethod.PUSH,
+    market        = "GB",
+    accountType   = AccountType.CONSUMER,
+    frequency     = Frequency.RECURRING,
+    paymentState  = PaymentState.PENDING,
 )
-val UkConsumerAutopayRulebook = rulebook {
+val UkConsumerRecurringPendingPushRulebook = rulebook {
     rule(InstrumentValidRule)
-    rule(AmountInRangeRule, AmountRange(min = 1.gbp, max = 5_000.gbp))    // tighter cap for autopay
-    rule(MandateValidRule)                                                 // autopay-only check
+    rule(AmountInRangeRule, AmountRange(min = 1.gbp, max = 5_000.gbp))    // tighter cap for recurring
+    rule(MandateValidRule)                                                 // recurring-only check
     rule(Customer360CorrectRule)
     rule(ClearingDateInFutureRule)
 }
@@ -158,7 +159,7 @@ The same service interface can be implemented three ways. The same `ServiceResol
 *Covers ~80% of variants.* No impl class is written for the variant. The author contributes only a rulebook. The generic `RuleBasedPaymentValidationService` (declared once, in `:service-impl-generic`, with `@PaymentVariant(generic = true)`) reads the rulebook and walks the chain.
 
 ```kotlin
-// Just a rulebook — see UkConsumerAutopayRulebook above. No class. No new wiring.
+// Just a rulebook — see UkConsumerRecurringPendingPushRulebook above. No class. No new wiring.
 ```
 
 ### Variation 2 — Hybrid: delegate to the rule chain with bespoke pre/post
@@ -296,7 +297,7 @@ The error names the rulebook, the rule, the missing prerequisite, and the varian
 - **Adding a rule** is one new `@ApplicationScoped class FooRule : ValidationRule`. Available to every rulebook immediately.
 - **Changing a parameter** (UK Consumer max amount from £25k → £30k) is a one-line diff in one rulebook. No code search-and-replace.
 - **Cross-service rules are first-class.** A rule that needs results from multiple services declares `requires = setOf(...)`; `OrchestrationLint` verifies the workflow runs those services first.
-- **Telemetry is uniform.** Every rule reports `rule.evaluate.duration{rule.id, ctx.market, ctx.accountType, ctx.source, ctx.frequency, result}` — one metric, one dashboard, every service.
+- **Telemetry is uniform.** Every rule reports `rule.evaluate.duration{rule.id, ctx.paymentMethod, ctx.market, ctx.accountType, ctx.frequency, ctx.paymentState, result}` — one metric, one dashboard, every service.
 - **The pattern extends beyond validation.** `PaymentExecutionService`, `PaymentPostingService`, etc. each get an analogous `ExecutionStep` / `PostingStep` chain with the same rulebook mechanism. The KSP processor, the resolver, the `PaymentPayload` threading, and `OrchestrationLint` are reused; only the step interface and the per-service step beans are new.
 
 ## Catalogue of common rules
@@ -307,7 +308,7 @@ Starter set for `ValidationRule`. Add more as the variants demand them; aim for 
 | --- | --- | --- |
 | `InstrumentValidRule` | Validation | — (activity call) |
 | `AmountInRangeRule` | Validation | — (parameterised; Domain only) |
-| `MandateValidRule` | Validation (autopay) | — (activity call) |
+| `MandateValidRule` | Validation (recurring push) | — (activity call) |
 | `Customer360CorrectRule` | Validation | `Customer360Data` |
 | `ClearingDateInFutureRule` | Validation, OnScheduling | — (Domain only) |
 | `MarketCutoffRule` | Validation, OnScheduling, OnExecution | — (activity call) |

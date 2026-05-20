@@ -86,7 +86,7 @@ Every type that crosses a Temporal workflow boundary — `PaymentContext`, `Paym
 
 ## Error model: selective Arrow-kt `Either`
 
-Use [Arrow-kt](https://arrow-kt.io/)'s `Either` only for services that benefit from rich, structured validation errors — primarily the four `PaymentValidationXxxService` interfaces. Other services use plain Kotlin exceptions caught by Temporal's retry policy.
+Use [Arrow-kt](https://arrow-kt.io/)'s `Either` only for services that benefit from rich, structured validation errors — primarily the consolidated `PaymentValidationService` interface. Other services use plain Kotlin exceptions caught by Temporal's retry policy.
 
 | Alternative | Reason rejected |
 | --- | --- |
@@ -94,7 +94,7 @@ Use [Arrow-kt](https://arrow-kt.io/)'s `Either` only for services that benefit f
 | **Kotlin stdlib `Result<T>`** | Single-error model; we want to fail fast on the first rule failure with rich context. `Result` works but Arrow's `Either` is more ergonomic for `either { … bind() … }` chains and `getOrElse`. |
 | **Arrow everywhere** | Learning-curve tax on services whose only outcomes are "did it" or "threw" (e.g. `PaymentStateTransitionService`). Use it where it pays back. |
 
-**Why selective Arrow**: rich validation chains genuinely benefit from `Either` and the `either { }` DSL; the other 24 services don't. Keep blast radius narrow.
+**Why selective Arrow**: rich validation chains genuinely benefit from `Either` and the `either { }` DSL; the other 21 services don't. Keep blast radius narrow.
 
 ## Orchestration declaration: `@OrchestrationPlan` in code, not external config
 

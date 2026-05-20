@@ -11,14 +11,15 @@ This page covers what an author writes. The runtime behaviour is on [Strategies]
 
 ## Variance axes
 
-The proposal commits to four axes today. The mechanism supports adding more without rework.
+The proposal commits to five axes today. The mechanism supports adding more without rework.
 
 | Axis | Type | Values |
 | --- | --- | --- |
+| `paymentMethod` | closed | `enum PaymentMethod { PUSH, PULL }` |
 | `market` | open-ended | ISO-3166 alpha-2 (`GB`, `US`, `MX`, …) — modelled as `@JvmInline value class Market(val iso2: String)` |
 | `accountType` | closed | `enum AccountType { CONSUMER, CORPORATE }` |
-| `source` | closed | `sealed interface Source { object App; object Autopay; object VoiceAssisted; data class CorporateBatch(...) }` |
 | `frequency` | closed | `enum Frequency { IMMEDIATE, SCHEDULED, RECURRING }` |
+| `paymentState` | closed | `enum PaymentState { PENDING, SCHEDULED, ALLOCATIONS_RECEIVED, … }` (the canonical lifecycle states from [the state model](../../../design/payment-state-model.md)) |
 
 These types live in a new `:variance-core` module so neither `:service-api` nor any `:service-impl-*` depends on the other.
 
@@ -32,10 +33,11 @@ package com.amex.billpay.service.validation
 import com.amex.billpay.variance.*
 
 @VariesOn(
-    VarianceAxis.SOURCE,
-    VarianceAxis.FREQUENCY,
-    VarianceAxis.ACCOUNT_TYPE,
+    VarianceAxis.PAYMENT_METHOD,
     VarianceAxis.MARKET,
+    VarianceAxis.ACCOUNT_TYPE,
+    VarianceAxis.FREQUENCY,
+    VarianceAxis.PAYMENT_STATE,
 )
 interface PaymentValidationService {
     suspend fun validate(
@@ -74,21 +76,22 @@ import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
 @PaymentVariant(
+    paymentMethod  = PaymentMethod.PUSH,
     market         = "GB",
     accountType    = AccountType.CONSUMER,
-    source         = SourceTag.AUTOPAY,
     frequency      = Frequency.RECURRING,
+    paymentState   = PaymentState.PENDING,
 )
-class PaymentValidationServiceUKConsumerAutopayImpl(
+class PaymentValidationServiceUKConsumerRecurringPendingPushImpl(
     private val cutoffs: UkCutoffsRepository,
-    private val autopayRules: AutopayRuleSet,
+    private val recurringRules: RecurringRuleSet,
 ) : PaymentValidationService {
     override suspend fun validate(ctx: PaymentContext, payload: PaymentPayload) =
-        either { /* UK Consumer Autopay rules */ }
+        either { /* UK Consumer Recurring Pending Push rules */ }
 }
 ```
 
-The annotation is the **source of truth** for routing. The class name (`…UKConsumerAutopayImpl`) is documentation — useful for stack traces and code review — and a [Konsist](https://docs.konsist.lemonappdev.com/) test enforces that the suffix matches the annotation.
+The annotation is the **source of truth** for routing. The class name (`…UKConsumerRecurringPendingPushImpl`) is documentation — useful for stack traces and code review — and a [Konsist](https://docs.konsist.lemonappdev.com/) test enforces that the suffix matches the annotation.
 
 ## The `Generic` fallback
 
@@ -115,7 +118,7 @@ If no `generic = true` impl exists and no tuple matches, the resolver throws `No
 
 ### Why per `(market, accountType)`, not per impl class
 
-24 impl modules — one per `(market, accountType)` family — is the sweet spot. A new market is one new module per account-type. Team ownership is clean: per-market teams own their pair of modules; cross-cutting service refactors happen in `:service-api`. Per-impl modules would explode the Gradle graph (28 services × 12 markets × 2 account-types ≈ 700 modules).
+24 impl modules — one per `(market, accountType)` family — is the sweet spot. A new market is one new module per account-type. Team ownership is clean: per-market teams own their pair of modules; cross-cutting service refactors happen in `:service-api`. Per-impl modules would explode the Gradle graph (22 services × 12 markets × 2 account-types ≈ 528 modules).
 
 ## Naming convention
 
@@ -123,17 +126,17 @@ If no `generic = true` impl exists and no tuple matches, the resolver throws `No
 
 - `PaymentValidationService` (interface)
 - `PaymentValidationServiceUKConsumerImpl` (`@PaymentVariant(market="GB", accountType=CONSUMER)`)
-- `PaymentValidationServiceUKConsumerAutopayImpl` (`@PaymentVariant(market="GB", accountType=CONSUMER, source=AUTOPAY, frequency=RECURRING)`)
+- `PaymentValidationServiceUKConsumerRecurringPendingPushImpl` (`@PaymentVariant(paymentMethod=PUSH, market="GB", accountType=CONSUMER, frequency=RECURRING, paymentState=PENDING)`)
 - `PaymentValidationServiceUSCorporateImpl` (`@PaymentVariant(market="US", accountType=CORPORATE)`)
 
-The suffix is mechanical — it spells out the bound axes in the order: market → account-type → source → frequency. A Konsist test enforces it.
+The suffix is mechanical — it spells out the bound axes in the order: market → account-type → frequency → payment-state → payment-method. A Konsist test enforces it.
 
 ## Checklist — adding a new service implementation
 
 - [ ] Decide whether the impl is purely rule-driven (no class needed — just a rulebook, see [Rule Engine](./rule-engine.md#variation-1-pure-rule-based)) or needs custom code.
 - [ ] Pick the existing `:service-impl-<market>-<accountType>` module, or create one if the `(market, accountType)` pair is new.
 - [ ] If writing a class: name it `Payment<Service><Suffix>Impl`, annotate `@ApplicationScoped` and `@PaymentVariant(...)`. Constructor takes only its own dependencies; the resolver wires itself.
-- [ ] If writing a rulebook only: declare a top-level `val …Rulebook = rulebook { … }` annotated `@Rulebook(service, market, accountType, source?, frequency?)`.
+- [ ] If writing a rulebook only: declare a top-level `val …Rulebook = rulebook { … }` annotated `@Rulebook(service, paymentMethod?, market?, accountType?, frequency?, paymentState?)`.
 - [ ] Confirm the annotation values match the class-name suffix (Konsist test will fail otherwise).
 - [ ] Run `./gradlew build` — KSP will fail the build if your tuple conflicts with an existing impl, if you bind an axis the interface doesn't declare, or if your rulebook references a rule whose `requires` isn't satisfied by the workflow's orchestration plan ([data flow](./data-flow.md#orchestrationlint)).
 - [ ] No workflow change. No resolver change. No sidebar of routing config to update.

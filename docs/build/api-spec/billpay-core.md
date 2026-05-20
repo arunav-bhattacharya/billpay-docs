@@ -75,13 +75,15 @@ detail.
 
 ## Idempotency
 
-Every Core API call passes through one of two idempotency services:
+Every Core API call passes through `IdempotencyService`. The service variant is
+resolved by **API identifier**:
 
-- `NewPaymentIdempotencyService` for **create** flows — first-write to
-  `idempotency_checker` + `trans_dtl` + `trans_lfcyc_event` succeeds; duplicates
-  are rejected.
-- `ExistingPaymentIdempotencyService` for **mutate** flows — writes only to
-  `idempotency_checker` for the corresponding API.
+- **Create-payment APIs** (`POST /payments`, `POST /payments/inbound`,
+  `POST /refunds`) — first-writes to `idempotency_checker`, `trans_dtl`, and
+  `trans_lfcyc_event`; duplicates are rejected.
+- **Mutate-payment APIs** (`PUT /payments/{id}`, `DELETE /payments/{id}`,
+  `POST /payments/returns`) — writes only to `idempotency_checker` for the
+  corresponding API.
 
-See [Payment Services](../../design/services.md#idempotency) for the
-full contract.
+See [Payment Services](../../design/services.md#idempotency) for the full
+contract.

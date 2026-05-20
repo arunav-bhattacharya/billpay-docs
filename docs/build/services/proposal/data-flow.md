@@ -192,7 +192,7 @@ End-to-end for `CreatePaymentWFImpl` with context `(US, CORPORATE, App, Immediat
 
 ```kotlin
 override fun run(req: CreatePaymentRequest): PaymentResult = runBlocking {
-    val ctx = PaymentContext(req.market, req.accountType, req.source, req.frequency)
+    val ctx = PaymentContext(req.paymentMethod, req.market, req.accountType, req.frequency, req.paymentState)
 
     // Start with the hardened Domain Model in its initial state.
     var payload = PaymentPayload(payment = PendingPayment.from(req))

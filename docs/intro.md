@@ -37,7 +37,7 @@ This site captures every moving part of that journey:
 
 - States are written in `UPPER_SNAKE_CASE` — e.g. `PENDING`, `ACCEPTED`, `PROCESSED`.
 - Workflow names use the `#NameWF` hashtag style: `#CreateImmediatePaymentWF`.
-- Service names end in `Service`: `PaymentValidationOnExecutionService`.
+- Service names end in `Service`: `PaymentRepresentmentEligibilityService`.
 - All diagrams on this site are written in [Mermaid](https://mermaid.js.org/) and
   render natively — you can copy them straight into Confluence or another Mermaid host.
 

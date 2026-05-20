@@ -11,7 +11,7 @@ sidebar_position: 1
 
 ## What this proposal solves
 
-[`docs/design/services.md`](../../../design/services.md) lists 28 services. Most of them have **variants** — different implementations selected at runtime per **market**, **account-type**, **source**, and **frequency**. The existing principles page names the problem ("`ServiceResolver` selects the right implementation at runtime") but does not prescribe **how** that resolver works, **how** implementations declare their variance, **how** business rules inside a service are organised, or **how** services exchange data without bleeding into the hardened domain model.
+[`docs/design/services.md`](../../../design/services.md) lists 22 services. Most of them have **variants** — different implementations selected at runtime per **market**, **account-type**, **source**, and **frequency**. The existing principles page names the problem ("`ServiceResolver` selects the right implementation at runtime") but does not prescribe **how** that resolver works, **how** implementations declare their variance, **how** business rules inside a service are organised, or **how** services exchange data without bleeding into the hardened domain model.
 
 This proposal answers those four questions in one coherent shape.
 

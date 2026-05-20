@@ -13,39 +13,43 @@ The author-facing surface is on [Interfaces](./interfaces.md); the runtime behav
 
 ```kotlin
 data class VariantTuple(
-    val market:      Market? = null,
-    val accountType: AccountType? = null,
-    val source:      Source? = null,
-    val frequency:   Frequency? = null,
-    val generic:     Boolean = false,
+    val paymentMethod: PaymentMethod? = null,
+    val market:        Market? = null,
+    val accountType:   AccountType? = null,
+    val frequency:     Frequency? = null,
+    val paymentState:  PaymentState? = null,
+    val generic:       Boolean = false,
 ) {
     /**
      * Bit-weighted specificity. The weights are distinct powers of two so that
      * no two combinations of bound axes can tie. The order encodes our policy:
-     * source > frequency > accountType > market.
+     * paymentState > frequency > accountType > market > paymentMethod.
      *
-     *   source       = 8
-     *   frequency    = 4
-     *   accountType  = 2
-     *   market       = 1
+     *   paymentState  = 16
+     *   frequency     = 8
+     *   accountType   = 4
+     *   market        = 2
+     *   paymentMethod = 1
      *
      * A generic tuple has score 0 and matches any context.
      */
     val specificity: Int =
-        (if (source      != null) 8 else 0) or
-        (if (frequency   != null) 4 else 0) or
-        (if (accountType != null) 2 else 0) or
-        (if (market      != null) 1 else 0)
+        (if (paymentState  != null) 16 else 0) or
+        (if (frequency     != null)  8 else 0) or
+        (if (accountType   != null)  4 else 0) or
+        (if (market        != null)  2 else 0) or
+        (if (paymentMethod != null)  1 else 0)
 
     fun matches(ctx: PaymentContext): Boolean =
-        (market      == null || market      == ctx.market) &&
-        (accountType == null || accountType == ctx.accountType) &&
-        (source      == null || source      == ctx.source) &&
-        (frequency   == null || frequency   == ctx.frequency)
+        (paymentMethod == null || paymentMethod == ctx.paymentMethod) &&
+        (market        == null || market        == ctx.market) &&
+        (accountType   == null || accountType   == ctx.accountType) &&
+        (frequency     == null || frequency     == ctx.frequency) &&
+        (paymentState  == null || paymentState  == ctx.paymentState)
 }
 ```
 
-**Why bit weights, not a count.** With "count of bound axes" as the score, `(market, accountType)` (2 axes) would tie `(source)` (1 axis-but-more-specific) — we'd need a tiebreaker. Bit weights produce a unique total ordering: `(source)` scores 8, `(market, accountType)` scores 3, `(source, accountType)` scores 10, etc. The policy is encoded in the weights, not in tiebreaker code.
+**Why bit weights, not a count.** With "count of bound axes" as the score, `(market, accountType)` (2 axes) would tie `(paymentState)` (1 axis-but-more-specific) — we'd need a tiebreaker. Bit weights produce a unique total ordering: `(paymentState)` scores 16, `(market, accountType)` scores 6, `(paymentState, accountType)` scores 20, etc. The policy is encoded in the weights, not in tiebreaker code.
 
 ## The `ServiceResolver`
 
@@ -99,9 +103,10 @@ object PaymentValidationServiceVariantIndex : VariantIndex<PaymentValidationServ
                    "PaymentValidationService::generic"),
         IndexEntry(VariantTuple(market = Market("GB"), accountType = AccountType.CONSUMER),
                    "PaymentValidationService::market=GB,accountType=CONSUMER"),
-        IndexEntry(VariantTuple(market = Market("GB"), accountType = AccountType.CONSUMER,
-                                source = Source.Autopay, frequency = Frequency.RECURRING),
-                   "PaymentValidationService::market=GB,accountType=CONSUMER,source=AUTOPAY,frequency=RECURRING"),
+        IndexEntry(VariantTuple(paymentMethod = PaymentMethod.PUSH, market = Market("GB"),
+                                accountType = AccountType.CONSUMER, frequency = Frequency.RECURRING,
+                                paymentState = PaymentState.PENDING),
+                   "PaymentValidationService::paymentMethod=PUSH,market=GB,accountType=CONSUMER,frequency=RECURRING,paymentState=PENDING"),
         // …
     )
 }
@@ -111,9 +116,10 @@ object PaymentValidationServiceRulebookIndex : RulebookIndex<PaymentValidationSe
     override val entries = listOf(
         RulebookEntry(VariantTuple(market = Market("GB"), accountType = AccountType.CONSUMER),
                       UkConsumerBaseRulebook),
-        RulebookEntry(VariantTuple(market = Market("GB"), accountType = AccountType.CONSUMER,
-                                   source = Source.Autopay, frequency = Frequency.RECURRING),
-                      UkConsumerAutopayRulebook),
+        RulebookEntry(VariantTuple(paymentMethod = PaymentMethod.PUSH, market = Market("GB"),
+                                   accountType = AccountType.CONSUMER, frequency = Frequency.RECURRING,
+                                   paymentState = PaymentState.PENDING),
+                      UkConsumerRecurringPendingPushRulebook),
         // …
     )
 }
@@ -150,7 +156,7 @@ The processor fails the build with file-pinned diagnostics in these cases:
 | --- | --- |
 | `error: duplicate variant tuple for PaymentValidationService at A.kt:12 and B.kt:9` | Two `@PaymentVariant`-annotated classes with identical tuples for the same interface |
 | `error: duplicate rulebook tuple for PaymentValidationService at A.kt:30 and B.kt:14` | Two `@Rulebook`-annotated `val`s with identical tuples for the same service |
-| `error: PaymentValidationService does not vary on FREQUENCY (declared axes: ACCOUNT_TYPE, MARKET)` | An impl binds an axis the interface's `@VariesOn` does not list |
+| `error: PaymentValidationService does not vary on ACCOUNT_TYPE (declared axes: PAYMENT_METHOD, MARKET, FREQUENCY, PAYMENT_STATE)` | An impl binds an axis the interface's `@VariesOn` does not list |
 | `error: variant tuple is empty; mark generic = true to declare a default` | An `@PaymentVariant` with no bound axes and `generic = false` |
 | `error: rulebook references rule InstrumentValidRule which is not a @ApplicationScoped ValidationRule bean` | A rulebook references a class that is not registered as a CDI bean |
 | `error: rulebook UsCorporateBaseRulebook (PaymentValidationService) requires AllocationsResult, but the orchestration plan for variant (US, CORPORATE) does not run PaymentAllocationsRequestService first` | `OrchestrationLint` — see [Data Flow](./data-flow.md#orchestrationlint) |
