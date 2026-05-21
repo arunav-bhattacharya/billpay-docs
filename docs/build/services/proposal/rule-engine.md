@@ -26,7 +26,7 @@ sealed interface RuleResult {
 }
 ```
 
-Other services have analogous shapes — `ExecutionStep` for `PaymentExecutionService`, `PostingStep` for `PaymentPostingService`, etc. The KSP machinery, the rulebook DSL, and the resolver are reused — only the step interface and the per-service step beans are new.
+Other services have analogous **step interfaces** — `ExecutionStep` for `PaymentExecutionService`, `PostingStep` for `PaymentPostingService`, etc. — with the same anatomy and the same DSL plumbing. The KSP machinery, the resolver, and the per-variant `@…Plan` discovery are reused; only the step interface and the per-service step beans are new. See [The same pattern beyond `ValidationRule`](#the-same-pattern-beyond-validationrule--other-services-other-step-interfaces) below for the catalogue and example plans.
 
 ## Writing a rule
 
@@ -94,9 +94,67 @@ class AmountInRangeRule : ValidationRule {
 data class AmountRange(val min: Money, val max: Money)
 ```
 
+## How different variants of one service pick different rules
+
+Every Payment Service interface (e.g. [`PaymentValidationService`](./interfaces.md#varieson--declare-the-axes-on-the-interface)) admits many implementations, each tagged with a distinct [`@PaymentVariant`](./annotations.md#paymentvariant) tuple. For the [pure rule-based variation](#variation-1-pure-rule-based) — which covers ~80% of variants — the **implementation is not a new class**. It's a single generic class (`RuleBasedPaymentValidationService`) plus one or more `@Rulebook` `val`s, each pinning a different list of `ValidationRule` beans to a different tuple. The generic impl looks up the [`RulebookIndex`](./variant-resolution.md#the-ksp-processor) for the resolved context and walks the list it gets back.
+
+The variance plays out **at the rule-list level**, not the rule-code level. Rules themselves are atomic and shared across variants — the per-variant variability lives in (a) which rules appear, (b) the order they run, and (c) the parameters passed to each.
+
+```mermaid
+%%{init: { 'themeVariables': { 'fontSize': '12px' }, 'flowchart': { 'nodeSpacing': 30, 'rankSpacing': 40, 'padding': 10 } } }%%
+flowchart LR
+    IFACE["<b>PaymentValidationService</b><br/>@VariesOn(paymentMethod, market,<br/>accountType, frequency, paymentState)"]
+
+    subgraph VARIANTS["@PaymentVariant tuples"]
+        direction TB
+        V1["(*, GB, CONSUMER, *, *)"]
+        V2["(PULL, GB, CONSUMER, RECURRING, PENDING)"]
+        V3["(*, US, CORPORATE, *, *)"]
+    end
+
+    subgraph RULEBOOKS["@Rulebook lists"]
+        direction TB
+        RB1["UkConsumerBaseRulebook<br/>InstrumentValid · AmountInRange(1–25,000 GBP)<br/>PaymentOptionsAllowed · ClearingDateInFuture"]
+        RB2["PullUkConsumerRecurringPendingRulebook<br/>InstrumentValid · AmountInRange(1–5,000 GBP) · MandateValid<br/>PaymentOptionsAllowed · ClearingDateInFuture"]
+        RB3["UsCorporateBaseRulebook<br/>InstrumentValid · AmountInRange(1–1,000,000 USD)<br/>MandateValid · PaymentOptionsAllowed · ClearingDateInFuture"]
+    end
+
+    IFACE --> V1 --> RB1
+    IFACE --> V2 --> RB2
+    IFACE --> V3 --> RB3
+```
+
+Notice how three variants of the **same service** carry **three different rule lists**:
+
+- `UkConsumerBaseRulebook` runs 4 rules with a GBP amount range; no mandate check (consumers don't need mandates).
+- `PullUkConsumerRecurringPendingRulebook` runs 5 rules including `MandateValidRule` (recurring PULL needs a mandate) and a tighter `AmountInRange(1–5,000)` cap.
+- `UsCorporateBaseRulebook` runs 5 rules with a much larger USD range and a corporate-side mandate check.
+
+`InstrumentValidRule` — one `@ApplicationScoped class` — is reused unchanged across all three. The variant decides whether to invoke it, and when. New variants are just one more `@Rulebook` entry; no new code in the service or the rules themselves.
+
+### What changes per variant
+
+| What | Example | Mechanism |
+| --- | --- | --- |
+| Which rules run | Recurring PULL adds `MandateValidRule`; one-off PUSH doesn't | Rule appears/doesn't appear in the `rulebook { }` body |
+| Rule parameters | UK Consumer max £25k; UK Consumer Recurring max £5k | DSL param passed to a parameterised rule: `rule(AmountInRangeRule, AmountRange(min = 1.gbp, max = 5_000.gbp))` |
+| Rule order | Snapshot lock before the amount check; not after | Order of `rule(…)` calls in the `rulebook { }` body |
+| Client used | Push-side instrument lookup vs pull-side mandate lookup | Different rule subclasses targeting different `*ClientActivity` |
+
+### What is shared across variants
+
+| What | Reason |
+| --- | --- |
+| The service interface (`PaymentValidationService`) | One contract, one resolver, one workflow integration point |
+| The generic service impl (`RuleBasedPaymentValidationService`) | Walks any rulebook; no per-variant code |
+| The individual rule beans (`InstrumentValidRule`, `AmountInRangeRule`, …) | Each rule is a single ArC / CDI bean; the cost of a new rule is one new class — used by any variant that needs it |
+| The `rulebook { … }` DSL + `@Rulebook` annotation | Declarative wiring; the same KSP processor indexes every rulebook |
+
+The proposal's leverage is exactly this: **a new variant for an existing `(paymentMethod, market)` is one ~10-line `@Rulebook` `val`**. Compare to the alternative (one full impl class per variant, every class hand-coding its own rule chain), where every new variant duplicates the same `if`-chain skeleton.
+
 ## The `rulebook { … }` DSL
 
-A rulebook is a top-level `val` annotated `@Rulebook(...)`. The annotation supplies the variant tuple; the DSL body lists the rules.
+A rulebook is a top-level `val` annotated [`@Rulebook(...)`](./annotations.md#rulebook). The annotation supplies the variant tuple; the DSL body lists the rules.
 
 ```kotlin
 // :service-impl-push-gb  (the same module also hosts pull-gb rulebooks if any)
@@ -297,7 +355,146 @@ The error names the rulebook, the rule, the missing prerequisite, the workflow, 
 - **Changing a parameter** (UK Consumer max amount from £25k → £30k) is a one-line diff in one rulebook. No code search-and-replace.
 - **Cross-service rules are first-class.** A rule that needs results from multiple services declares `requires = setOf(...)`; `OrchestrationLint` verifies the workflow runs those services first.
 - **Telemetry is uniform.** Every rule reports `rule.evaluate.duration{rule.id, ctx.paymentMethod, ctx.market, ctx.accountType, ctx.frequency, ctx.paymentState, result}` — one metric, one dashboard, every service.
-- **The pattern extends beyond validation.** `PaymentExecutionService`, `PaymentPostingService`, etc. each get an analogous `ExecutionStep` / `PostingStep` chain with the same rulebook mechanism. The KSP processor, the resolver, the `PaymentPayload` threading, and `OrchestrationLint` are reused; only the step interface and the per-service step beans are new.
+- **The pattern extends beyond validation.** Every service that decomposes into a sequential (or parallel-fan-out) chain gets its own step interface + plan DSL — see [The same pattern beyond `ValidationRule`](#the-same-pattern-beyond-validationrule--other-services-other-step-interfaces) below.
+
+## The same pattern beyond `ValidationRule` — other services, other step interfaces
+
+`ValidationRule` is one of several **step interfaces**. Every Payment Service that decomposes naturally into a sequential chain of business steps gets its own step interface and its own `@…Plan`-style annotation — same shape, different name. The KSP machinery, the DSL, and the resolver are reused; the only new code per service-family is the step interface and the per-service step beans.
+
+### The shape every step interface shares
+
+```kotlin
+interface XxxStep {                                                   // X = Validation / Execution / Posting / Fulfillment / …
+    val id: String                                                    // stable identifier for config + telemetry
+    val requires: Set<KClass<out ServiceResult>> get() = emptySet()
+    suspend fun run(ctx: PaymentContext, payload: PaymentPayload): StepResult
+}
+
+sealed interface StepResult {
+    object Ok : StepResult
+    data class Fail(val code: String, val message: String) : StepResult
+}
+```
+
+`ValidationRule` is `XxxStep` with `evaluate(...)` instead of `run(...)` and `RuleResult` instead of `StepResult` — same anatomy. The naming differs to keep telemetry, error codes, and stack traces readable per service-family.
+
+### Catalogue of step interfaces
+
+| Payment Service | Step interface | Plan annotation | What each step does | Example steps |
+| --- | --- | --- | --- | --- |
+| [`PaymentValidationService`](../../../design/services.md) | `ValidationRule` | `@Rulebook` | Pass / fail check against domain + scratchpad + client | `InstrumentValidRule`, `AmountInRangeRule`, `MandateValidRule`, `ClearingDateInFutureRule` |
+| `PaymentExecutionService` | `ExecutionStep` | `@ExecutionPlan` | Side-effect dispatch + result accumulation (clearing send, AR debit, OTB increase) | `SendToClearingStep`, `DebitArStep`, `IncreaseOtbStep` |
+| `PaymentPostingService` | `PostingStep` | `@PostingPlan` | AR / OTB updates only (no clearing send) — used by inbound flows | `PostToArStep`, `RefreshOtbStep` |
+| `PaymentFulfillmentService` | `FulfillmentStep` | `@FulfillmentPlan` | Downstream notification (Accounting, B&C, Communications) | `NotifyAccountingStep`, `NotifyBcStep`, `NotifyCommsStep` |
+| `PaymentClearingService` | `ClearingStep` | `@ClearingPlan` | Per-market clearing-network protocol | `Bacs.SubmitStep` (GB), `Ach.SubmitStep` (US), … |
+| `PaymentRepresentmentValidationService` | `ValidationRule` *(reused)* | `@Rulebook` *(reused)* | Same validation shape — different rulebooks per market | `RepresentmentEligibleRule`, `ReturnReasonRecognisedRule` |
+| `EventNotificationService` | `NotificationStep` | `@NotificationPlan` | Channel routing per `(market, accountType, workflowType, paymentState)` | `EmailStep`, `PushStep`, `SmsStep` |
+
+### Example — `PaymentExecutionService` with three variants
+
+The execution flow on `ACCEPTED → PROCESSING` differs per market, account-type, and payment-method:
+
+- **UK Consumer (Push)**: AR debit + OTB increase in parallel + Bacs clearing submission.
+- **US Corporate (Push)**: ACH clearing + corporate AR ledger update.
+- **MX Consumer (Pull)**: SPEI clearing + consumer AR debit; no OTB (Mexico AR product doesn't track OTB).
+
+Each variant is a different `@ExecutionPlan` `val`, **not** a new service class:
+
+```kotlin
+// :service-impl-push-gb
+@ExecutionPlan(
+    service     = PaymentExecutionService::class,
+    paymentMethod = PaymentMethod.PUSH,
+    market        = "GB",
+    accountType   = AccountType.CONSUMER,
+)
+val UkConsumerPushExecutionPlan = executionPlan {
+    parallel {
+        step(BacsSubmitStep)
+        step(DebitArStep)
+        step(IncreaseOtbStep)
+    }
+    step(StampExecutionResultStep)               // produces ExecutionResult into scratchpad
+}
+
+// :service-impl-push-us
+@ExecutionPlan(
+    service     = PaymentExecutionService::class,
+    paymentMethod = PaymentMethod.PUSH,
+    market        = "US",
+    accountType   = AccountType.CORPORATE,
+)
+val UsCorporatePushExecutionPlan = executionPlan {
+    parallel {
+        step(AchSubmitStep)
+        step(DebitCorporateArStep)
+    }
+    step(StampExecutionResultStep)
+}
+
+// :service-impl-pull-mx
+@ExecutionPlan(
+    service     = PaymentExecutionService::class,
+    paymentMethod = PaymentMethod.PULL,
+    market        = "MX",
+    accountType   = AccountType.CONSUMER,
+)
+val MxConsumerPullExecutionPlan = executionPlan {
+    parallel {
+        step(SpeiSubmitStep)
+        step(DebitArStep)
+    }
+    step(StampExecutionResultStep)
+}
+```
+
+A single generic `StepBasedPaymentExecutionService` (with `@PaymentVariant(generic = true)`) walks whichever plan the resolver returns for the current context. The `parallel { }` block is the only DSL extension over `rulebook { }`'s sequential semantics — execution can fan out side-effects in parallel; validation always short-circuits sequentially.
+
+### Example — `PaymentFulfillmentService` with the same shape
+
+Fulfillment on `PROCESSING → PROCESSED` notifies downstream systems. Each variant decides which channels fire:
+
+```kotlin
+@FulfillmentPlan(
+    service     = PaymentFulfillmentService::class,
+    market      = "GB",
+    accountType = AccountType.CONSUMER,
+)
+val UkConsumerFulfillmentPlan = fulfillmentPlan {
+    parallel {
+        step(NotifyAccountingStep)
+        step(NotifyBcStep)
+        step(NotifyCommsStep, params = CommsParams(template = "uk_consumer_paid"))
+    }
+}
+
+@FulfillmentPlan(
+    service     = PaymentFulfillmentService::class,
+    market      = "US",
+    accountType = AccountType.CORPORATE,
+)
+val UsCorporateFulfillmentPlan = fulfillmentPlan {
+    parallel {
+        step(NotifyAccountingStep)
+        step(NotifyBcStep)
+        // No NotifyCommsStep — US Corporate gets its notifications via the
+        // corporate portal pull, not push notifications.
+        step(EmitCorporatePortalEventStep)
+    }
+}
+```
+
+Same anatomy: declarative plan, per-variant content, shared step beans. `NotifyAccountingStep` is one bean; both variants use it.
+
+### What this means for adding a new service-family
+
+Adding a new Payment Service that decomposes naturally into steps takes three things:
+
+1. **A new step interface** in `:variance-core` (e.g. `PostingStep`).
+2. **A new plan annotation + DSL builder** mirroring `@Rulebook` + `rulebook { }`. The KSP processor's symbol-collection pass picks them up via the existing `@…Plan` discovery.
+3. **A generic `Step-Based<Service>` impl** annotated `@PaymentVariant(generic = true)` that walks the plan for the resolved context.
+
+After that, every per-variant variant is just one more `@…Plan` `val`. The resolver, the [`OrchestrationLint`](./data-flow.md#orchestrationlint) cross-service-`requires` check, the `@Identifier` synthesis, and the per-variant gradient diagrams all keep working unchanged.
 
 ## Catalogue of common rules
 
