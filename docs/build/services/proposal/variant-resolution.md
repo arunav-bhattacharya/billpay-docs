@@ -1,11 +1,11 @@
 ---
 title: Variant Resolution
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 # Variant Resolution — Technical Reference
 
-**The resolver is data; the data is generated.** A KSP processor scans every `@PaymentVariant` and `@Rulebook` at build time, validates them against the interface's `@VariesOn`, and emits a per-interface `VariantIndex` and `RulebookIndex` that the runtime consumes. This page covers the generated artefacts, the conflict-detection rules, the bit-weighted specificity algorithm, and the two adoption paths (recommended KSP-driven; incremental ArC-only).
+**The resolver is data; the data is generated.** A [KSP](https://kotlinlang.org/docs/ksp-overview.html) processor scans every `@PaymentVariant` and `@Rulebook` at build time, validates them against the interface's `@VariesOn`, and emits a per-interface `VariantIndex` and `RulebookIndex` that the runtime consumes. This page covers the generated artefacts, the conflict-detection rules, the bit-weighted specificity algorithm, and the two adoption paths (recommended KSP-driven; incremental ArC / CDI-only).
 
 The author-facing surface is on [Interfaces](./interfaces.md); the runtime behaviour is on [Strategies](./strategies.md).
 
@@ -59,7 +59,7 @@ One per service interface, populated from the KSP-generated `VariantIndex<I>`:
 class ServiceResolver<I : Any>(
     private val serviceInterface: KClass<I>,
     private val entries: List<IndexEntry<I>>,   // build-time-generated, immutable
-    private val lookup: (String) -> I,          // delegates to ArC: instance.select(@Identifier(key)).get()
+    private val lookup: (String) -> I,          // delegates to ArC / CDI: instance.select(@Identifier(key)).get()
 ) {
     data class IndexEntry<I>(val tuple: VariantTuple, val identifierKey: String)
 
@@ -146,7 +146,27 @@ class ResolverFactory(@Any private val all: Instance<Any>) {
 }
 ```
 
-And, on each `@PaymentVariant`-annotated implementation, an `@Identifier(<key>)` is synthesised so ArC can address it uniquely.
+And, on each `@PaymentVariant`-annotated implementation, an `@Identifier(<key>)` is synthesised so ArC / CDI can address it uniquely. The next subsection unpacks what that means.
+
+## `@Identifier` — the KSP-synthesised handle ArC / CDI uses to address impls
+
+[`@Identifier`](https://quarkus.io/guides/cdi-reference#identifier) is a [Jakarta CDI](https://jakarta.ee/specifications/cdi/) qualifier — a bean-identification annotation ArC (Quarkus' build-time CDI implementation) uses to disambiguate beans of the same type. The proposal does **not** ask authors to write `@Identifier` themselves. The KSP processor synthesises one `@Identifier(<deterministic-key>)` on every `@PaymentVariant`-annotated class at compile time.
+
+The deterministic key encodes the tuple — for example:
+
+```
+"PaymentValidationService::paymentMethod=PUSH,market=GB,accountType=CONSUMER,frequency=RECURRING,paymentState=PENDING"
+```
+
+so the generated [`ResolverFactory`](#outputs) can do
+
+```kotlin
+all.select(PaymentValidationService::class.java, Identifier.Literal.of(key)).get()
+```
+
+to fetch the specific impl. The author writes only `@PaymentVariant(...)`. The synthesised `@Identifier` is invisible at the source level and only appears in `build/generated/ksp/main/...`.
+
+**Why this matters.** ArC / CDI's per-axis `@Qualifier` alternative would create one annotation per axis value (`@UK`, `@Consumer`, `@Push`, `@Recurring`, …) and force authors to remember to add each one — N annotations per new market, all reviewable by humans only. With KSP-synthesised `@Identifier`, the author writes the tuple once on `@PaymentVariant` and the lookup string is mechanical. The annotation-sprawl problem is solved at the codegen layer rather than the CDI layer.
 
 ## Conflict detection
 
@@ -159,9 +179,9 @@ The processor fails the build with file-pinned diagnostics in these cases:
 | `error: PaymentValidationService does not vary on ACCOUNT_TYPE (declared axes: PAYMENT_METHOD, MARKET, FREQUENCY, PAYMENT_STATE)` | An impl binds an axis the interface's `@VariesOn` does not list |
 | `error: variant tuple is empty; mark generic = true to declare a default` | An `@PaymentVariant` with no bound axes and `generic = false` |
 | `error: rulebook references rule InstrumentValidRule which is not a @ApplicationScoped ValidationRule bean` | A rulebook references a class that is not registered as a CDI bean |
-| `error: rulebook UsCorporateBaseRulebook (PaymentValidationService) requires AllocationsResult, but the orchestration plan for variant (US, CORPORATE) does not run PaymentAllocationsRequestService first` | `OrchestrationLint` — see [Data Flow](./data-flow.md#orchestrationlint) |
+| `error: rulebook RepresentmentRulebook (PaymentRepresentmentValidationService) requires RepresentmentEligibility, but the orchestration plan for workflow ProcessRepresentmentWFImpl does not run PaymentRepresentmentEligibilityService first` | [`OrchestrationLint`](./data-flow.md#orchestrationlint) — see [Data Flow](./data-flow.md#orchestrationlint) |
 
-The single biggest reason for picking KSP over runtime CDI scanning: ambiguous beans in CDI throw `AmbiguousResolutionException` only at the first injection that hits the ambiguity. A KSP error fails CI on a feature branch.
+The single biggest reason for picking KSP over runtime ArC / CDI scanning: ambiguous beans in CDI throw `AmbiguousResolutionException` only at the first injection that hits the ambiguity. A KSP error fails CI on a feature branch.
 
 ## Coverage gate
 
@@ -176,11 +196,11 @@ The release pipeline holds the artifact until coverage is complete. New markets 
 
 ## Two adoption paths
 
-### Recommended: KSP + Konsist + ArC `@Identifier`
+### Recommended: KSP + Konsist + ArC / CDI `@Identifier`
 
 The full architecture above. Build-time validation, fast startup, no reflection at boot, native-image-friendly. This is the target.
 
-### Incremental: ArC-only with runtime scanning
+### Incremental: ArC / CDI-only with runtime scanning
 
 For teams who want to start without a KSP dependency, the same shape works at runtime with two trade-offs:
 
@@ -196,7 +216,7 @@ class ManualVariantIndex<I : Any>(
 }
 ```
 
-| Concern | KSP path | ArC-only path |
+| Concern | KSP path | ArC / CDI-only path |
 | --- | --- | --- |
 | Conflict detection | Build time, file-pinned diagnostic | Boot time, stack trace |
 | Worker startup | Index pre-built, negligible overhead | One reflection scan over `Instance<I>` |
@@ -204,7 +224,7 @@ class ManualVariantIndex<I : Any>(
 | Diagnostic quality | IntelliJ squiggle on the offending class | Logs |
 | Cost | KSP processor maintenance | Slightly more runtime indirection |
 
-**Migration path**: start with the ArC-only approach for the first 1–2 services you migrate, prove the shape works, then introduce the KSP processor and regenerate the indices. The runtime contract (`ServiceResolver<I>`) is identical on both paths — only the index-population mechanism differs. No call site changes.
+**Migration path**: start with the ArC / CDI-only approach for the first 1–2 services you migrate, prove the shape works, then introduce the KSP processor and regenerate the indices. The runtime contract ([`ServiceResolver<I>`](#the-serviceresolver)) is identical on both paths — only the index-population mechanism differs. No call site changes.
 
 ## Native-image considerations
 
@@ -212,16 +232,16 @@ For Quarkus native builds:
 
 - `kotlinx.serialization` codecs are generated at compile time → no reflection metadata needed for `@Serializable` types.
 - KSP-generated `VariantIndex` and `RulebookIndex` are concrete Kotlin objects → reachable from the entry point without reflection hints.
-- The only reflection-using component is ArC's `Instance.select(...)` with `@Identifier` — Quarkus handles this natively.
+- The only reflection-using component is ArC / CDI's `Instance.select(...)` with `@Identifier` — Quarkus handles this natively.
 
-The ArC-only path does require reflection metadata for every impl class on native image; the KSP path does not.
+The ArC / CDI-only path does require reflection metadata for every impl class on native image; the KSP path does not.
 
 ## Why resolution happens at the workflow boundary, not in an activity
 
 The natural reflex from Java/Kotlin Temporal codebases is to put DI lookups inside activities. We deliberately don't:
 
-- Activities are normal CDI beans, but they're invoked through Temporal's task-queue plumbing. Putting routing inside an activity means **two** indirections per call (workflow → dispatch activity → resolved service) and an extra Temporal event-history entry per service call.
+- Activities are normal ArC / CDI beans, but they're invoked through Temporal's task-queue plumbing. Putting routing inside an activity means **two** indirections per call (workflow → dispatch activity → resolved service) and an extra Temporal event-history entry per service call.
 - Resolution is a pure data lookup. It doesn't need an activity boundary to be safe — the workflow can do it inline on the workflow thread, and Temporal replay will produce the same answer.
-- Putting the resolver in the workflow makes the workflow's service dependencies explicit at construction time (each `ServiceResolver<I>` is a constructor parameter), which makes test-mocking trivial.
+- Putting the resolver in the workflow makes the workflow's service dependencies explicit at construction time (each [`ServiceResolver<I>`](#the-serviceresolver) is a constructor parameter), which makes test-mocking trivial.
 
 So the rule is: **workflows resolve, services run on the workflow thread, activities are called from inside services for I/O.** No dispatch activity layer.

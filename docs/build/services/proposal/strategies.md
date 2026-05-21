@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Routing Strategy
 
-**Routing is data, not branching.** A workflow holds a `PaymentContext` and a `ServiceResolver<I>`; the resolver does a pure lookup against a build-time-generated index and returns the most-specific implementation for that context. There is no `if (market == "GB") …` in workflow code, and there is no container scan or service-locator lookup on the hot path.
+**Routing is data, not branching.** A workflow holds a `PaymentContext` and a [`ServiceResolver<I>`](./variant-resolution.md#the-serviceresolver); the resolver does a pure lookup against a build-time-generated index and returns the most-specific implementation for that context. There is no `if (market == "GB") …` in workflow code, and there is no container scan or service-locator lookup on the hot path.
 
 This page covers what happens at runtime. The declarations behind it are on [Interfaces](./interfaces.md); the build-time machinery is on [Variant Resolution](./variant-resolution.md).
 
@@ -28,7 +28,7 @@ data class PaymentContext(
 
 ## Workflows invoke services directly
 
-The workflow holds an injected resolver for each service it uses and calls `resolver.resolve(ctx).method(...)` inline. **No dispatch activity.** The service runs on the workflow thread; activities used by the service are created via `Workflow.newActivityStub(...)` from inside the service or its rules.
+The workflow holds an injected [`ServiceResolver<I>`](./variant-resolution.md#the-serviceresolver) for each service it uses and calls `resolver.resolve(ctx).method(...)` inline. **No dispatch activity.** The service runs on the workflow thread; activities used by the service are created via `Workflow.newActivityStub(...)` from inside the service or its rules.
 
 ```kotlin
 @WorkflowImpl
@@ -59,7 +59,7 @@ class CreatePaymentWFImpl(
 
 ### Why this is deterministic under Temporal replay
 
-- `ServiceResolver.resolve(ctx)` is a pure lookup over an immutable index. The same `ctx` always returns the same implementation class — no clock, no random, no container scan.
+- [`ServiceResolver.resolve(ctx)`](./variant-resolution.md#the-serviceresolver) is a pure lookup over an immutable index. The same `ctx` always returns the same implementation class — no clock, no random, no container scan.
 - The resolver itself is injected at worker registration time; the workflow's construction is deterministic.
 - I/O still flows through Temporal activities (called from inside the service or rule). Activity results are recorded in the event history and replayed identically.
 
@@ -71,25 +71,26 @@ Every registered tuple gets a **score** computed from which axes it binds. The r
 
 | Axis bound | Weight |
 | --- | ---: |
-| `paymentState` | 16 |
-| `frequency` | 8 |
-| `accountType` | 4 |
-| `market` | 2 |
 | `paymentMethod` | 1 |
+| `market` | 2 |
+| `accountType` | 4 |
+| `frequency` | 8 |
+| `paymentState` | 16 |
 
-The weights are powers of two so no two axis combinations can tie. `(market + paymentState)` scores 18; `(market + frequency)` scores 10; `(market + accountType)` scores 6 — distinct, total ordering, no tiebreaker needed.
+The weights are powers of two so no two axis combinations can tie. `(market + accountType)` scores 6; `(market + frequency)` scores 10; `(market + paymentState)` scores 18 — distinct, total ordering, no tiebreaker needed.
 
 A `@PaymentVariant(generic = true)` tuple has score `0` and matches any context.
 
 ## Worked example — `PaymentValidationService`
 
-Suppose three rulebooks/impls are registered for `PaymentValidationService`. Tuples are shown in `(paymentMethod, market, accountType, frequency, paymentState)` order:
+Suppose four rulebooks/impls are registered for `PaymentValidationService`. Tuples are shown in `(paymentMethod, market, accountType, frequency, paymentState)` order:
 
 | Impl / rulebook | Tuple | Score |
 | --- | --- | ---: |
-| `…UKConsumerImpl` (or `UkConsumerRulebook`) | `(*, GB, CONSUMER, *, *)` | `2 + 4 = 6` |
-| `…UKConsumerRecurringPendingPushImpl` (or `UkConsumerRecurringPendingPushRulebook`) | `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | `1 + 2 + 4 + 8 + 16 = 31` |
-| `…USCorporateImpl` (or `UsCorporateRulebook`) | `(*, US, CORPORATE, *, *)` | `2 + 4 = 6` |
+| `PaymentValidationServiceUKConsumer` (or `UkConsumerRulebook`) | `(*, GB, CONSUMER, *, *)` | `2 + 4 = 6` |
+| `PaymentValidationServicePushUKConsumerRecurringPending` (or `PushUkConsumerRecurringPendingRulebook`) | `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | `1 + 2 + 4 + 8 + 16 = 31` |
+| `PaymentValidationServiceUSCorporate` (or `UsCorporateRulebook`) | `(*, US, CORPORATE, *, *)` | `2 + 4 = 6` |
+| `RuleBasedPaymentValidationService` *(generic fallback in `:service-impl-generic`)* | `(generic = true)` | `0` |
 
 ### Context A: `(PUSH, GB, CONSUMER, RECURRING, PENDING)`
 
@@ -98,8 +99,9 @@ Suppose three rulebooks/impls are registered for `PaymentValidationService`. Tup
 | `(*, GB, CONSUMER, *, *)` | yes | 6 |
 | `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | yes | **31 ◄** |
 | `(*, US, CORPORATE, *, *)` | no (market, accountType) | — |
+| `(generic = true)` | yes | 0 |
 
-Resolver returns the Recurring-Pending-Push impl.
+Resolver returns the Recurring-Pending-Push impl — highest specificity wins.
 
 ### Context B: `(PULL, GB, CONSUMER, IMMEDIATE, PENDING)`
 
@@ -108,24 +110,37 @@ Resolver returns the Recurring-Pending-Push impl.
 | `(*, GB, CONSUMER, *, *)` | yes | **6 ◄** |
 | `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | no (paymentMethod, frequency) | — |
 | `(*, US, CORPORATE, *, *)` | no (market, accountType) | — |
+| `(generic = true)` | yes | 0 |
 
 Resolver returns the UK Consumer base impl. **Hierarchical fallback is automatic** — the Recurring-Pending-Push tuple didn't match, but the more general one did. No separate fallback table is maintained; the score ordering produces it.
 
-### Context C: `(PUSH, MX, CONSUMER, IMMEDIATE, PENDING)`
+### Context C: `(PUSH, MX, CONSUMER, IMMEDIATE, PENDING)` *— and the deployable did **not** register a generic*
 
 | Candidate | Matches? | Score |
 | --- | --- | ---: |
 | `(*, GB, CONSUMER, *, *)` | no (market) | — |
 | `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | no | — |
 | `(*, US, CORPORATE, *, *)` | no | — |
+| `(generic = true)` | *not registered for this deployable* | — |
 
-No match, no `generic = true` impl. Resolver throws `NoVariantImplFoundException`. See [Failure modes](#failure-modes) for what happens next.
+No match, no `generic = true` impl on the classpath. Resolver throws [`NoVariantImplFoundException`](./variant-resolution.md#the-serviceresolver). See [Failure modes](#failure-modes) — failing loudly in an unsupported market is deliberate.
+
+### Context D: `(PUSH, JP, CORPORATE, IMMEDIATE, PENDING)` — falls back to the generic
+
+| Candidate | Matches? | Score |
+| --- | --- | ---: |
+| `(*, GB, CONSUMER, *, *)` | no (market, accountType) | — |
+| `(PUSH, GB, CONSUMER, RECURRING, PENDING)` | no | — |
+| `(*, US, CORPORATE, *, *)` | no (market) | — |
+| `(generic = true)` | yes | **0 ◄** |
+
+JP isn't bound to any specific tuple, but `:service-impl-generic` registered `RuleBasedPaymentValidationService` with `@PaymentVariant(generic = true)`. The resolver matches nothing specific, then takes the generic fallback. Context D is the explicit-fallback case — the deployable's `live-markets.txt` would normally list `JP` as a generic-fallback market so the [coverage gate](./variant-resolution.md#coverage-gate) doesn't fail the release. Context C is the *fail-loud* case: a market that should never silently take the generic.
 
 ## Failure modes
 
 ### No matching impl
 
-**Hard fail.** The resolver throws `NoVariantImplFoundException(serviceInterface, ctx, registeredTuples)`. The workflow catches it, transitions the payment to `DECLINED` with reason `routing_unsupported` via `PaymentStateTransitionService`, and returns. We deliberately do **not** silently fall back to a Generic impl unless the service interface advertises one. Money movement that silently runs a default validator in an unsupported market is worse than failing loudly.
+**Hard fail.** The resolver throws [`NoVariantImplFoundException(serviceInterface, ctx, registeredTuples)`](./variant-resolution.md#the-serviceresolver). The workflow catches it, transitions the payment to `DECLINED` with reason `routing_unsupported` via `PaymentStateTransitionService`, and returns. We deliberately do **not** silently fall back to a generic impl unless the deployable advertises one (via the `:service-impl-generic` module's `@PaymentVariant(generic = true)` class). Money movement that silently runs a default validator in an unsupported market is worse than failing loudly.
 
 ### Ambiguous match
 
@@ -133,11 +148,11 @@ Cannot happen at runtime — the build fails first. The [KSP processor](./varian
 
 ### Missing prerequisite data
 
-A rule that declares `requires = setOf(AllocationsResult::class)` will throw `IllegalStateException` if the workflow hasn't run `PaymentAllocationsRequestService` before validation. This too is caught at build time by [`OrchestrationLint`](./data-flow.md#orchestrationlint) — the build fails naming the rulebook, the rule, and the missing prerequisite.
+A rule that declares `requires = setOf(RepresentmentEligibility::class)` will throw `IllegalStateException` if the workflow hasn't run `PaymentRepresentmentEligibilityService` before validation. This too is caught at build time by [`OrchestrationLint`](./data-flow.md#orchestrationlint) — the build fails naming the rulebook, the rule, and the missing prerequisite.
 
 ## Onboarding a new market
 
-To start routing traffic to market `XX`, the deployable must contain — for every service that has `MARKET` in its `@VariesOn` — at least one impl or rulebook binding to `market = "XX"`. A release-gate KSP check enumerates the [services design reference](../../../design/services.md), cross-references the live-market list, and fails the release artifact if any required `(service, market)` pair is missing.
+To start routing traffic to market `XX`, the deployable must contain — for every service that has `MARKET` in its `@VariesOn` — at least one impl or rulebook binding to `market = "XX"` in the corresponding `:service-impl-<paymentMethod>-xx` module(s), or an explicit `falls-back-to-generic` annotation in `live-markets.txt`. A release-gate KSP check enumerates the [services design reference](../../../design/services.md), cross-references the live-market list (28 markets at launch), and fails the release artifact if any required `(service, market)` pair is missing.
 
 This is documented in detail on [Variant Resolution › Coverage gate](./variant-resolution.md#coverage-gate).
 
@@ -146,11 +161,11 @@ This is documented in detail on [Variant Resolution › Coverage gate](./variant
 The proposal does not require a big-bang switchover. The realtime worker can run a mix of resolver-driven services and bespoke selection logic during rollout:
 
 - Services not yet migrated continue using their existing selection.
-- Migrated services get a `ServiceResolver<I>` bean produced by the KSP-generated `ResolverFactory`.
+- Migrated services get a [`ServiceResolver<I>`](./variant-resolution.md#the-serviceresolver) bean produced by the KSP-generated `ResolverFactory`.
 - A workflow can use either path simply by injecting `ServiceResolver<I>` or the legacy selector. No global switch.
 
-Recommended order: **Generic services first** (smallest blast radius — single impl, no routing), then market-only services, then 2-axis, then 3-axis. By the time `PaymentValidationService` (the 4-axis service) is migrated, the resolver and KSP plumbing has been exercised by ~20 simpler services.
+Recommended order: **Generic services first** (smallest blast radius — single impl, no routing), then market-only services, then 2-axis, then 3-axis. By the time `PaymentValidationService` (the 5-axis service) is migrated, the resolver and KSP plumbing has been exercised by ~18 simpler services.
 
 :::tip
-The flow above intentionally hides the rules and the `PaymentPayload` accumulator to keep the resolution story isolated. For the end-to-end walkthrough of how a single `PaymentValidationService.validate(...)` call composes rules and reads from upstream services, see [Data Flow › Workflow walkthrough](./data-flow.md#workflow-walkthrough).
+The flow above intentionally hides the rules and the [`PaymentPayload`](./data-flow.md#the-two-halves-of-paymentpayload) accumulator to keep the resolution story isolated. For the end-to-end walkthrough of how a single `PaymentValidationService.validate(...)` call composes rules and reads upstream service results, see [Data Flow › Workflow walkthrough](./data-flow.md#workflow-walkthrough).
 :::

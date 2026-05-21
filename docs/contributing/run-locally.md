@@ -12,7 +12,7 @@ need Node 20+ and npm (Yarn or pnpm also work).
 ## 1. Install dependencies
 
 ```bash
-cd billpay-docs
+cd billpay-wiki
 npm install
 ```
 
@@ -22,10 +22,10 @@ npm install
 npm run start
 ```
 
-Docusaurus will boot on **http://localhost:3000/billpay-docs/** with hot reload.
+Docusaurus will boot on **http://localhost:3000/billpay-wiki/** with hot reload.
 
 :::tip
-The `baseUrl` is `/billpay-docs/` so the local URL includes that prefix. If you
+The `baseUrl` is `/billpay-wiki/` so the local URL includes that prefix. If you
 prefer the root path while developing, edit `baseUrl: '/'` in
 `docusaurus.config.js` and remember to revert before publishing.
 :::
@@ -60,7 +60,7 @@ npm run clear
 ## Project layout
 
 ```
-billpay-docs/
+billpay-wiki/
 ├── docs/                      # markdown content
 │   ├── architecture/
 │   ├── apis/

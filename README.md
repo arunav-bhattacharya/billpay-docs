@@ -10,7 +10,7 @@ npm install
 npm run start
 ```
 
-Open http://localhost:3000/billpay-docs/
+Open http://localhost:3000/billpay-wiki/
 
 ## Build
 

@@ -161,6 +161,7 @@ const sidebars = {
                 'build/services/proposal/interfaces',
                 'build/services/proposal/strategies',
                 'build/services/proposal/data-flow',
+                'build/services/proposal/annotations',
                 'build/services/proposal/variant-resolution',
                 'build/services/proposal/rule-engine',
                 'build/services/proposal/tooling-rationale',

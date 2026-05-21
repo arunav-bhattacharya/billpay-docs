@@ -39,7 +39,7 @@ function Stats() {
   const items = [
     {num: '8', label: 'Billpay Core APIs'},
     {num: '11', label: 'Core Workflows'},
-    {num: '28', label: 'Payment Services'},
+    {num: '22', label: 'Payment Services'},
     {num: '5', label: 'Scheduled Workers'},
   ];
   return (

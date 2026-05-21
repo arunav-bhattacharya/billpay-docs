@@ -12,18 +12,18 @@ laptop, or a **GitHub Actions workflow** that publishes on every push to
 
 ## Prerequisites
 
-1. A GitHub repo for this site — recommended name: **`billpay-docs`**.
+1. A GitHub repo for this site — recommended name: **`billpay-wiki`**.
 2. Replace the placeholder values in `docusaurus.config.js`:
 
 ```js
 const GH_USER  = 'YOUR_GH_USER';  // e.g. 'arunavxxx' or your org name
-const REPO_NAME = 'billpay-docs';
+const REPO_NAME = 'billpay-wiki';
 ```
 
 The site URL becomes:
 
 ```
-https://<GH_USER>.github.io/billpay-docs/
+https://<GH_USER>.github.io/billpay-wiki/
 ```
 
 If you push to a custom domain, set `url:` to that domain and `baseUrl: '/'`.
@@ -53,7 +53,7 @@ Then in GitHub → **Settings → Pages**:
 - **Source:** `Deploy from a branch`
 - **Branch:** `gh-pages` / `/ (root)`
 
-After a minute or two, the site is live at `https://<GH_USER>.github.io/billpay-docs/`.
+After a minute or two, the site is live at `https://<GH_USER>.github.io/billpay-wiki/`.
 
 ## Option B — Continuous deployment with GitHub Actions
 
@@ -113,11 +113,11 @@ Every push to `main` will rebuild and publish the site automatically.
 - [ ] Repo created on GitHub and `main` pushed
 - [ ] **Settings → Pages** source configured (`gh-pages` branch *or* `GitHub Actions`)
 - [ ] `npm run build` passes locally (no broken links)
-- [ ] Site reachable at `https://<GH_USER>.github.io/billpay-docs/`
+- [ ] Site reachable at `https://<GH_USER>.github.io/billpay-wiki/`
 
 ## Custom domain (optional)
 
-1. Add a `static/CNAME` file containing your domain, e.g. `billpay-docs.example.com`.
+1. Add a `static/CNAME` file containing your domain, e.g. `billpay-wiki.example.com`.
 2. Set `url:` in `docusaurus.config.js` to that domain and `baseUrl: '/'`.
 3. Configure the DNS record (CNAME → `<GH_USER>.github.io`).
 

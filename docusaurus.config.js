@@ -5,7 +5,7 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 
 const GH_USER = 'arunav-bhattacharya'; // <-- replace with your GitHub username / org
-const REPO_NAME = 'billpay-docs';
+const REPO_NAME = 'billpay-wiki';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -39,6 +39,7 @@ const config = {
   clientModules: [
     require.resolve('./src/clientModules/colorize-mermaid-notes.js'),
     require.resolve('./src/clientModules/inject-gantt-gradients.js'),
+    require.resolve('./src/clientModules/inject-proposal-flowchart-gradients.js'),
   ],
 
   i18n: {

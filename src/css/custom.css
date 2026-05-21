@@ -1765,3 +1765,84 @@ html { scroll-behavior: smooth; }
   transition: transform .15s;
   display: inline-block;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Proposal-section Mermaid flowchart styling.
+   The bpPropN gradient classes are filled by inject-proposal-flowchart-gradients.js.
+   This block handles the bits the JS can't reach: cluster (subgraph) chrome,
+   default flowchart edges, and arrow colours per theme. The font already comes
+   from the global .docusaurus-mermaid-container rule (line ~174).
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Subgraph (cluster) chrome — neutral, theme-aware. The cluster rect doesn't
+   carry a bpProp class, so we style it directly. */
+[data-theme='light'] .docusaurus-mermaid-container svg g.cluster > rect {
+  fill: rgba(250, 248, 242, 0.55) !important;
+  stroke: #C9C3B0 !important;
+  stroke-dasharray: 4 4 !important;
+  stroke-width: 1px !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg g.cluster > rect {
+  fill: rgba(40, 38, 34, 0.45) !important;
+  stroke: #5C594F !important;
+  stroke-dasharray: 4 4 !important;
+  stroke-width: 1px !important;
+}
+
+/* Subgraph titles — make them readable on both themes. */
+[data-theme='light'] .docusaurus-mermaid-container svg g.cluster .cluster-label,
+[data-theme='light'] .docusaurus-mermaid-container svg g.cluster .cluster-label *,
+[data-theme='light'] .docusaurus-mermaid-container svg g.cluster .nodeLabel,
+[data-theme='light'] .docusaurus-mermaid-container svg g.cluster .nodeLabel * {
+  color: #2C2C2A !important;
+  fill: #2C2C2A !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg g.cluster .cluster-label,
+[data-theme='dark'] .docusaurus-mermaid-container svg g.cluster .cluster-label *,
+[data-theme='dark'] .docusaurus-mermaid-container svg g.cluster .nodeLabel,
+[data-theme='dark'] .docusaurus-mermaid-container svg g.cluster .nodeLabel * {
+  color: #E8E6DD !important;
+  fill: #E8E6DD !important;
+}
+
+/* Flowchart edges (arrows between nodes) — readable on both themes. */
+[data-theme='light'] .docusaurus-mermaid-container svg g.edgePaths path.flowchart-link,
+[data-theme='light'] .docusaurus-mermaid-container svg g.edgePaths path.path {
+  stroke: #8E8B82 !important;
+  stroke-width: 1.5px !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg g.edgePaths path.flowchart-link,
+[data-theme='dark'] .docusaurus-mermaid-container svg g.edgePaths path.path {
+  stroke: #9B968A !important;
+  stroke-width: 1.5px !important;
+}
+[data-theme='light'] .docusaurus-mermaid-container svg defs marker path,
+[data-theme='light'] .docusaurus-mermaid-container svg marker path {
+  fill: #8E8B82 !important;
+}
+[data-theme='dark'] .docusaurus-mermaid-container svg defs marker path,
+[data-theme='dark'] .docusaurus-mermaid-container svg marker path {
+  fill: #9B968A !important;
+}
+
+/* Padding around proposal-page mermaid containers so the bigger diagrams
+   breathe a little. */
+.docusaurus-mermaid-container:has(g.bpProp1, g.bpProp2, g.bpProp3, g.bpProp4, g.bpProp5, g.bpProp6, g.bpProp7) {
+  padding: 20px 0;
+}
+
+/* Constrain the overall flowchart canvas so the Runtime-flow diagram doesn't
+   stretch full-width and balloon vertically. Keeps a comfortable reading
+   width on wide screens; mobile falls back to natural sizing. */
+.docusaurus-mermaid-container:has(g.bpProp4) > svg {
+  max-width: 760px !important;
+  height: auto !important;
+}
+
+/* Worked-resolution rulebook boxes (Idea 02): the box rect widths are
+   equalised at runtime by `inject-proposal-flowchart-gradients.js` after
+   Mermaid renders. CSS here just makes sure label content can wrap within
+   the rewritten width. */
+.docusaurus-mermaid-container:has(g.bpProp6):has(g.bpProp3):has(g.bpProp1):not(:has(g.bpProp4)) g.node foreignObject .nodeLabel {
+  white-space: normal !important;
+}

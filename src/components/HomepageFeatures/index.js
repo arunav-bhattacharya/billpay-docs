@@ -74,7 +74,7 @@ const FEATURES = [
   {
     icon: '🧩',
     title: 'Services',
-    desc: '28 business-rule units — validation, state transitions, clearing, posting, fulfillment, notification — composed of one-or-more activities.',
+    desc: '22 business-rule units — validation, state transitions, clearing, posting, fulfillment, notification — composed of one-or-more activities.',
     to: '/docs/design/services',
     tone: 'amber',
   },
