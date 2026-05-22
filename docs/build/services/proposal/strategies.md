@@ -81,6 +81,10 @@ The weights are powers of two so no two axis combinations can tie. `(market + ac
 
 A `@PaymentVariant(generic = true)` tuple has score `0` and matches any context.
 
+:::tip[Why bit weights, and why not pattern matching?]
+The reasoning behind powers-of-two weights — and why this proposal picks scoring over wildcard / regex / predicate / `@Order` pattern-matching schemes — lives on the [Design FAQs](./faqs.md#routing--scoring) page. The short version: weights kill ties without a tiebreaker, encode the priority policy as data, and let KSP enforce uniqueness at build time.
+:::
+
 ## Worked example — `PaymentValidationService`
 
 Suppose four rulebooks/impls are registered for `PaymentValidationService`. Tuples are shown in `(paymentMethod, market, accountType, frequency, paymentState)` order:

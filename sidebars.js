@@ -165,6 +165,7 @@ const sidebars = {
                 'build/services/proposal/variant-resolution',
                 'build/services/proposal/rule-engine',
                 'build/services/proposal/tooling-rationale',
+                'build/services/proposal/faqs',
               ],
             },
           ],

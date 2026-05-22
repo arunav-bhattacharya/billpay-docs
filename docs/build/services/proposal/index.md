@@ -217,9 +217,11 @@ Adding a variant for an existing `(paymentMethod, market)` is one `@Rulebook` `v
 1. [**Interfaces**](./interfaces.md) — how to declare a service interface, an implementation, the module layout, and the new-impl checklist.
 2. [**Strategies**](./strategies.md) — how routing happens at runtime, the specificity score, four worked `PaymentValidationService` contexts including the deliberate-fallback case.
 3. [**Data Flow**](./data-flow.md) — Domain Model vs `WorkflowScratchpad`, `PaymentPayload`, `@OrchestrationPlan`, the `OrchestrationLint` build check.
-4. [**Variant Resolution**](./variant-resolution.md) — deep technical reference for the KSP processor, the resolver, and the `@Identifier` synthesis; recommended and incremental tooling paths.
-5. [**Rule Engine**](./rule-engine.md) — rules, rulebooks, the DSL, three side-by-side impl variations of `PaymentValidationService`, and the catalogue of common rules.
-6. [**Tooling Rationale**](./tooling-rationale.md) — per-tool justification: alternatives considered, reasons rejected, why this pick. (Kotlin and Quarkus are project defaults and not re-justified.)
+4. [**Annotations & KSP Processor**](./annotations.md) — formal reference for `@VariesOn`, `@PaymentVariant`, `@Rulebook`, `@OrchestrationPlan`, `@Identifier`, plus the processor pseudo-code.
+5. [**Variant Resolution**](./variant-resolution.md) — deep technical reference for the resolver, the `VariantTuple`, and the recommended vs incremental tooling paths.
+6. [**Rule Engine**](./rule-engine.md) — rules, rulebooks, the DSL, three side-by-side impl variations of `PaymentValidationService`, how multiple variants share rule beans, and step interfaces for the other services.
+7. [**Tooling Rationale**](./tooling-rationale.md) — per-tool justification: alternatives considered, reasons rejected, why this pick. (Kotlin and Quarkus are project defaults and not re-justified.)
+8. [**Design FAQs**](./faqs.md) — answers to the design questions that come up in review: why bit weights, why scoring over pattern matching, why `paymentState` is the most specific axis, what happens when adding a new axis, and more.
 
 ## Scope guardrails
 
